@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08121c">
+  <title>Турнирный день — планировщик</title>
+  <meta name="description" content="Планировщик расписания турнира по олимпийской системе. Работает отдельно и сохраняется для работы без сети.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2306111d'/%3E%3Cpath d='M12 17h40v8H12zm0 18h40v8H12z' fill='%230066ef'/%3E%3Cpath d='M21 13v38M43 13v38' stroke='white' stroke-width='7'/%3E%3C/svg%3E">
+  <style>
+    :root{font-family:Arial,Helvetica,sans-serif;color:#f2f7fc;background:#06111d;font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 30% 0,#102337,#06111d 64%);min-height:100vh}button,a{font:inherit}button:focus-visible,a:focus-visible{outline:2px solid #56baff;outline-offset:3px}
+    .wrap{width:min(980px,100%);margin:0 auto;padding:40px clamp(20px,4vw,50px) 52px}.top{display:flex;align-items:center;justify-content:space-between;gap:18px;padding-bottom:22px;border-bottom:1px solid #274051}.brand{display:flex;align-items:center;gap:16px}.mark{font-size:2rem;line-height:1;font-weight:900;letter-spacing:-.16em;color:#fff;padding-right:5px}.mark b{color:#127bff}.brand small{font-size:.73rem;line-height:1.12;letter-spacing:.16em;font-weight:800;color:#e0e9f5}.origin{text-decoration:none;color:#a6bacb;font-size:.85rem;border-bottom:1px solid #506a7d}.origin:hover{color:white}
+    h1{text-transform:uppercase;font-size:clamp(2rem,4.5vw,3.7rem);line-height:.95;letter-spacing:-.055em;margin:24px 0 11px}.sub{color:#aebdc8;font-size:.95rem;line-height:1.4;margin:0 0 30px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.group{min-width:0}.group h2{font-size:.76rem;letter-spacing:.09em;text-transform:uppercase;color:#b2c2cd;margin:0 0 8px}.choices{display:flex;border:1px solid #40566b;border-radius:5px;overflow:hidden}.choices button{appearance:none;color:#f1f5f8;background:#091725;border:0;min-height:44px;flex:1;cursor:pointer;font-weight:500;font-size:1.08rem}.choices button+button{border-left:1px solid #40566b}.choices button[aria-pressed="true"]{background:#0878f6;color:#fff;font-weight:800}.choices button:hover:not([aria-pressed="true"]){background:#1a3048}
+    .schedule{margin-top:28px}.schedule-title{display:flex;align-items:baseline;justify-content:space-between;gap:15px;margin:0 0 10px}.schedule h2{margin:0;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;color:#b8c8d2}.summary{font-size:.86rem;color:#79bbff;font-weight:700}.table-scroll{max-height:445px;overflow:auto;border:1px solid #31485a;border-radius:5px;background:#06111ad9}table{border-collapse:collapse;width:100%;font-size:.9rem;text-align:left}thead{position:sticky;top:0;background:#132435;color:#a9bbc8;font-size:.76rem;text-transform:uppercase;letter-spacing:.07em}th,td{padding:11px 12px;border-bottom:1px solid #24394b;vertical-align:top}tbody tr:last-child td{border-bottom:0}tbody tr:hover{background:#10283b}td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums;color:#e5edf3}td:nth-child(2){white-space:nowrap}td:last-child{color:#bed3e0}.round{color:#8ec8fa;font-size:.72rem;display:block;margin-bottom:3px;text-transform:uppercase;letter-spacing:.06em}.notice{color:#eec27c;font-size:.87rem;line-height:1.4;min-height:20px;margin:12px 0 0}
+    .actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:23px}.actions button{min-height:54px;border-radius:7px;border:1px solid #1676de;color:#fff;background:#0878f6;cursor:pointer;font-weight:700}.actions button:hover{background:#0065dd}.actions button.secondary{background:transparent;border-color:#41708e}.actions button.secondary:hover{background:#14334c}.offline{border-top:1px solid #304456;margin-top:22px;padding-top:18px;color:#aebdc8;font-size:.89rem;line-height:1.45}.offline button{border:0;background:none;color:#91ceff;font-weight:700;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:4px}.offline button:hover{color:white}.screen-reader{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    body.embedded{background:#06111d;min-height:0}body.embedded .wrap{padding:16px 17px 8px;width:100%}body.embedded .top{padding-bottom:10px}body.embedded .mark{font-size:1.7rem}body.embedded .brand small{font-size:.64rem}body.embedded .origin{display:none}body.embedded h1{font-size:clamp(1.6rem,3.2vw,2.3rem);margin:15px 0 8px}body.embedded .sub{display:none}body.embedded .grid{gap:8px}body.embedded .group h2{font-size:.64rem;margin-bottom:6px}body.embedded .choices button{min-height:38px;font-size:.98rem}body.embedded .schedule{margin-top:20px}body.embedded .schedule h2{font-size:.68rem}body.embedded .summary{font-size:.73rem}body.embedded .table-scroll{max-height:175px}body.embedded table{font-size:.77rem}body.embedded th,body.embedded td{padding:8px 7px}body.embedded thead{display:none}body.embedded .round{font-size:.61rem}body.embedded .notice{font-size:.7rem;margin:7px 0 0}body.embedded .actions,body.embedded .offline{display:none}
+    @media(max-width:640px){.wrap{padding:22px 17px 34px}.top{padding-bottom:16px}.origin{font-size:.76rem}.mark{font-size:1.6rem}.brand{gap:10px}.brand small{font-size:.62rem}.sub{font-size:.88rem}.grid{gap:9px}.group h2{font-size:.68rem;min-height:2.3em}.choices button{min-height:45px;font-size:.94rem}.schedule-title{display:block}.summary{display:block;margin-top:5px}.table-scroll{max-height:55vh}table{font-size:.8rem}th,td{padding:9px 7px}td:nth-child(2){white-space:normal}.actions{grid-template-columns:1fr}body.embedded .wrap{padding:13px 11px}body.embedded .group h2{font-size:.6rem}body.embedded .choices button{font-size:.86rem}body.embedded h1{font-size:1.55rem}body.embedded .table-scroll{max-height:178px}}
+    @media(max-width:390px){.grid{gap:5px}.group h2{letter-spacing:0}.choices button{font-size:.83rem;padding:0 4px}.brand small{letter-spacing:.08em}body.embedded .wrap{padding:13px 8px}body.embedded .choices button{font-size:.8rem}}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top"><div class="brand"><span class="mark" aria-hidden="true">Я<b>К</b>С</span><small>YAR CYBER<br>SEASON</small></div><a class="origin" href="index.html">Вернуться к работе ↗</a></header>
+    <h1>Турнирный день</h1>
+    <p class="sub">Черновое расписание для олимпийской системы. Старт в 10:00, между слотами 15 минут.</p>
+    <div class="grid" role="group" aria-label="Параметры турнира">
+      <section class="group" aria-labelledby="teams-label"><h2 id="teams-label">Команды</h2><div class="choices" id="teams"><button type="button" data-value="8" aria-pressed="true">8</button><button type="button" data-value="16" aria-pressed="false">16</button></div></section>
+      <section class="group" aria-labelledby="venues-label"><h2 id="venues-label">Площадки</h2><div class="choices" id="venues"><button type="button" data-value="1" aria-pressed="true">1</button><button type="button" data-value="2" aria-pressed="false">2</button></div></section>
+      <section class="group" aria-labelledby="duration-label"><h2 id="duration-label">Матч, мин</h2><div class="choices" id="duration"><button type="button" data-value="45" aria-pressed="true">45</button><button type="button" data-value="60" aria-pressed="false">60</button></div></section>
+    </div>
+    <section class="schedule" aria-labelledby="schedule-label"><div class="schedule-title"><h2 id="schedule-label">Предварительное расписание</h2><span class="summary" id="summary" aria-live="polite"></span></div>
+      <div class="table-scroll"><table><caption class="screen-reader">Список матчей по раундам с временем и площадкой</caption><thead><tr><th>Время</th><th>Площадка</th><th>Матч</th><th>Пара</th></tr></thead><tbody id="schedule-body"></tbody></table></div><p class="notice" id="notice" aria-live="polite"></p>
+    </section>
+    <div class="actions"><button class="secondary" type="button" id="download-csv">Скачать результат · CSV</button><button type="button" id="reset">Новый расчёт</button></div>
+    <div class="offline">Этот экран может работать без сайта. <button type="button" id="download-tool">Скачать инструмент · HTML</button> — параметры и расчёт останутся внутри файла.</div>
+  </main>
+  <script id="state" type="application/json">{"teams":8,"venues":1,"duration":45}</script>
+  <script>
+    const options={teams:[8,16],venues:[1,2],duration:[45,60]};
+    const defaults={teams:8,venues:1,duration:45};
+    let saved;
+    try{saved=JSON.parse(document.getElementById('state').textContent)}catch{saved=defaults}
+    const query=new URLSearchParams(location.search);
+    const embedded=query.has('embedded');
+    if(embedded)document.body.classList.add('embedded');
+    const state={};
+    for(const key of Object.keys(options)){
+      const fromUrl=Number(query.get(key));
+      state[key]=options[key].includes(fromUrl)?fromUrl:options[key].includes(saved[key])?saved[key]:defaults[key];
+    }
+    const roundLabels={3:['Четвертьфинал','Полуфинал','Финал'],4:['1/8 финала','Четвертьфинал','Полуфинал','Финал']};
+    const pad=n=>String(n).padStart(2,'0');
+    function time(minutes){const day=Math.floor(minutes/1440);const local=minutes%1440;return `${pad(Math.floor(local/60))}:${pad(local%60)}${day?` +${day} день`:''}`}
+    function calculate(){
+      const rounds=Math.log2(state.teams),rows=[];
+      let start=600,number=1,previous=[];
+      for(let round=0;round<rounds;round++){
+        const count=state.teams/2**(round+1),current=[];
+        for(let i=0;i<count;i++){
+          const slot=Math.floor(i/state.venues),begins=start+slot*(state.duration+15),ends=begins+state.duration;
+          const pair=round===0?`Команда ${i*2+1} — Команда ${i*2+2}`:`Победитель М${previous[i*2]} — М${previous[i*2+1]}`;
+          rows.push({number,round:roundLabels[rounds][round],begins,ends,venue:i%state.venues+1,pair});
+          current.push(number++);
+        }
+        previous=current;
+        start+=Math.ceil(count/state.venues)*(state.duration+15);
+      }
+      return rows;
+    }
+    let rows=[];
+    function render(){
+      for(const key of Object.keys(options))for(const button of document.querySelectorAll(`#${key} button`))button.setAttribute('aria-pressed',Number(button.dataset.value)===state[key]?'true':'false');
+      rows=calculate();
+      const tbody=document.getElementById('schedule-body');
+      tbody.replaceChildren(...rows.map(row=>{
+        const tr=document.createElement('tr');
+        for(const content of [`${time(row.begins)} — ${time(row.ends)}`,`Площадка ${row.venue}`,`М${row.number}`,row.pair]){
+          const td=document.createElement('td');td.textContent=content;tr.appendChild(td);
+        }
+        const label=document.createElement('span');label.className='round';label.textContent=row.round;tr.children[2].prepend(label);
+        return tr;
+      }));
+      const end=rows.at(-1).ends;
+      document.getElementById('summary').textContent=`${rows.length} матчей · конец ${time(end)}`;
+      document.getElementById('notice').textContent=end>=1440?'Расчёт выходит за пределы суток. Добавьте площадку или сократите длительность матча.':'';
+      document.getElementById('state').textContent=JSON.stringify(state);
+      if(embedded&&window.parent!==window)window.parent.postMessage({type:'planner-state',...state},location.origin);
+    }
+    for(const key of Object.keys(options))document.getElementById(key).addEventListener('click',event=>{
+      const button=event.target.closest('button[data-value]');if(!button)return;
+      state[key]=Number(button.dataset.value);render();
+    });
+    function download(name,text,type){const blob=new Blob([text],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+    document.getElementById('download-csv').addEventListener('click',()=>{
+      const quote=value=>`"${String(value).replaceAll('"','""')}"`;
+      const lines=[['Раунд','Матч','Начало','Конец','Площадка','Пара'],...rows.map(r=>[r.round,`М${r.number}`,time(r.begins),time(r.ends),r.venue,r.pair])];
+      download('turnirnyj-den.csv','\ufeff'+lines.map(row=>row.map(quote).join(';')).join('\r\n'),'text/csv;charset=utf-8');
+    });
+    document.getElementById('reset').addEventListener('click',()=>{Object.assign(state,defaults);render();window.scrollTo({top:0,behavior:'smooth'})});
+    document.getElementById('download-tool').addEventListener('click',()=>{
+      const copy=document.documentElement.cloneNode(true);
+      copy.querySelector('body').classList.remove('embedded');
+      copy.querySelector('#state').textContent=JSON.stringify(state);
+      download('turnirnyj-den.html','<!doctype html>\n'+copy.outerHTML,'text/html;charset=utf-8');
+    });
+    render();
+  </script>
+</body>
+</html>

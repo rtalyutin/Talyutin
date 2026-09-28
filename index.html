@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e8ebee">
+  <title>Посторонним можно — инструмент внутри портфолио</title>
+  <meta name="description" content="Работающее портфолио Романа Талютина: настройте турнирный день и унесите инструмент с собой.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23091015'/%3E%3Cpath d='M0 0h44L24 26l9 11L0 64z' fill='%23eef0f2'/%3E%3Cpath d='M44 0 24 26l9 11L0 64' fill='none' stroke='%230093a8' stroke-width='5'/%3E%3C/svg%3E">
+  <style>
+    :root{font-family:Arial,Helvetica,sans-serif;color:#080b0e;background:#d7dce1;font-synthesis:none}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0}button,a{font:inherit}a{color:inherit}button:focus-visible,a:focus-visible,iframe:focus-visible{outline:3px solid #0069e8;outline-offset:3px}
+    .shell{position:relative;isolation:isolate;max-width:1720px;min-height:calc(100vh - 48px);margin:24px auto;background:#e9ecef;box-shadow:0 24px 80px #17222b35;overflow:hidden}
+    .backdrop{position:absolute;z-index:-2;inset:0 25.8% 0 0;background:#e7ebef url('assets/tear.webp') center center/cover no-repeat}
+    .backdrop:after{content:"";position:absolute;inset:0 0 0 68%;background:linear-gradient(90deg,transparent,#e9ecef 98%)}
+    .header{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:34px 3.2%;font-size:1rem;font-weight:700}
+    .brand{display:flex;align-items:baseline;gap:30px;letter-spacing:-.03em;text-decoration:none}.brand small{font-size:.84rem;color:#68717a;font-weight:400;letter-spacing:0}
+    .header nav{display:flex;gap:34px;align-items:center}.header nav a{text-decoration:none;border-bottom:1px solid transparent}.header nav a:hover{border-color:currentColor}
+    .content{display:grid;grid-template-columns:minmax(270px,31%) minmax(500px,43%) minmax(270px,26%);align-items:center;min-height:705px;padding:12px 3.2% 54px;gap:0}
+    .intro{align-self:center;padding-right:4%;max-width:480px}.eyebrow,.case-number,.technical{color:#006cad;text-transform:uppercase;font-size:.86rem;font-weight:800;letter-spacing:.09em}
+    h1{font-size:clamp(3rem,5vw,5.9rem);line-height:.88;letter-spacing:-.065em;margin:38px 0 36px;text-transform:uppercase}h1 span,.case h2 span{color:#087ac2}
+    .lead{font-size:clamp(1.2rem,1.65vw,1.65rem);line-height:1.24;letter-spacing:-.025em;max-width:340px;margin:0 0 35px}
+    .intro .aside{color:#525b63;line-height:1.42;font-size:1rem;max-width:315px}
+    .machine-zone{position:relative;min-width:0;z-index:2;padding:6px 18px 0 0;transform:translateX(-2%)}
+    .machine-status{height:28px;color:#edf4f5;text-align:center;text-shadow:0 1px 6px #000;font-size:.78rem;text-transform:uppercase;letter-spacing:.11em;font-weight:800}
+    .machine{position:relative;padding:14px 13px 19px;background:linear-gradient(135deg,#3d4347,#111619 12%,#171d21 75%,#343a3e);border:3px solid #070c0e;border-radius:23px;box-shadow:0 7px 0 #05090b,0 20px 35px #0009,inset 0 0 0 2px #667076;transition:transform .5s,opacity .5s}
+    .machine:before{content:"";position:absolute;inset:9px;border:1px solid #5d666b;border-radius:13px;pointer-events:none}
+    .machine iframe{width:100%;height:400px;border:1px solid #28333b;border-radius:8px;display:block;background:#071019}
+    .latch{position:relative;display:flex;justify-content:flex-end;margin:-1px 12px 0 0}.latch a{display:inline-flex;align-items:center;justify-content:center;gap:18px;padding:14px 19px 13px;background:linear-gradient(#e1e2e0,#9b9e9e);border:2px solid #252c30;border-radius:3px 3px 9px 9px;box-shadow:0 5px 0 #15191b,0 9px 12px #0009;color:#0b1013;font-weight:800;text-transform:uppercase;text-decoration:none;font-size:.83rem;letter-spacing:-.025em}.latch a:hover{background:linear-gradient(#f8faf9,#bbc7cb)}.latch a span{font-size:1.4rem;line-height:.7}
+    .socket{display:none;min-height:477px;padding:42px;align-items:center;justify-content:center;text-align:center;border:12px solid #171d20;border-radius:19px;background:radial-gradient(circle at 50% 35%,#222b2e,#080d10 68%);box-shadow:inset 0 0 0 2px #556066,inset 0 20px 45px #000,0 20px 36px #0008;color:#e5edf0}
+    .socket-inner{padding:65px 14px;border:1px solid #576267;max-width:360px;width:100%}.socket-inner strong{display:block;font-size:clamp(1.6rem,2.5vw,2.7rem);font-weight:500;line-height:1.12;text-transform:uppercase;letter-spacing:-.03em}.socket-inner p{color:#adb9c0;line-height:1.4}.socket-inner button,.socket-inner a{display:inline-block;background:none;border:0;border-bottom:1px solid #63c7e0;color:#65d5ef;padding:7px 0;cursor:pointer;text-decoration:none;font-weight:700}
+    .detached .machine,.detached .latch{display:none}.detached .socket{display:flex}.detached .machine-status{color:#cce9f1}
+    .below-machine{display:flex;justify-content:space-between;gap:12px;margin:28px 6px;color:#d5dfe3;text-shadow:0 2px 4px #000;font-size:.68rem;text-transform:uppercase;letter-spacing:.12em}.below-machine a{font-size:.82rem;color:inherit;text-decoration-thickness:1px;text-underline-offset:4px}
+    .case{align-self:stretch;margin:-5px -13.9% -54px 0;padding:79px 12% 36px 10%;background:linear-gradient(90deg,#e9eceff2,#e9ecef 18%);min-width:0}
+    .case-top{display:flex;gap:20px;align-items:center;color:#5c6167;font-size:.9rem;letter-spacing:.08em;text-transform:uppercase;font-weight:800}.case h2{text-transform:uppercase;font-size:clamp(2.5rem,3.4vw,4.25rem);line-height:.9;letter-spacing:-.06em;margin:26px 0 34px}
+    .fact{border-top:1px solid #aeb6bc;padding:20px 0;display:grid;grid-template-columns:30% 1fr;gap:10px;font-size:.98rem;line-height:1.34}.fact b{color:#006cad;text-transform:uppercase;font-size:.81rem;line-height:1.22}.fact p{margin:0;color:#333a40}.fact:last-of-type{border-bottom:1px solid #aeb6bc}
+    .case .contact{margin-top:32px;display:inline-block;border-bottom:1px solid currentColor;padding-bottom:4px;text-decoration:none;font-weight:700}.case .contact:hover{color:#006cad}
+    .footer{position:relative;margin:0 3.2% 0;border-top:1px solid #aeb6bc;padding:24px 0 30px;display:flex;align-items:center;justify-content:space-between;gap:20px;font-weight:700;font-size:.95rem}.footer small{font-size:.8rem;color:#5d676d;font-weight:400}
+    @media(max-width:1180px){.shell{margin:0;min-height:100vh}.content{grid-template-columns:minmax(240px,38%) minmax(420px,62%);padding:30px 4% 55px}.case{grid-column:1/-1;margin:40px -4.5% -55px;padding:40px 5%;display:grid;grid-template-columns:1fr 1fr;column-gap:5%}.case-top,.case h2,.case .contact{grid-column:1/-1}.fact{grid-template-columns:135px 1fr}.backdrop{inset:0 0 33% 0}.backdrop:after{inset:0 0 0 77%}.machine-zone{transform:none}.intro{align-self:start;padding-top:100px}}
+    @media(max-width:760px){.header{padding:22px 5%;align-items:flex-start}.brand{display:block}.brand small{display:block;margin-top:5px}.header nav{gap:0}.header nav a:first-child{display:none}.content{display:block;padding:5px 5% 30px}.backdrop{inset:0 0 48% 0;background-position:57% 0}.backdrop:after{background:linear-gradient(180deg,transparent 35%,#e9ecef 95%);inset:38% 0 0}.intro{padding:35px 0 20px;max-width:460px}.intro h1{font-size:clamp(3.2rem,13vw,5.8rem);margin:24px 0}.intro .aside{display:none}.lead{font-size:1.14rem;max-width:280px;margin-bottom:0}.machine-zone{padding:5px 0 0}.machine-status{text-align:left;margin-left:6px}.machine{padding:9px 8px 13px;border-radius:17px}.machine:before{inset:6px}.machine iframe{height:395px}.latch{margin-right:6px}.latch a{font-size:.8rem}.socket{min-height:470px}.below-machine{margin:25px 4px;color:#252d31;text-shadow:none}.case{display:block;margin:28px -5.6% -30px;padding:38px 5.5% 45px}.case h2{max-width:500px}.fact{grid-template-columns:115px 1fr}.footer{padding:19px 0 25px;flex-wrap:wrap}.footer small{display:block;width:100%}}
+    @media(max-width:460px){.header nav{font-size:.9rem}.brand{font-size:.92rem}.brand small{font-size:.72rem}.intro h1{font-size:clamp(2.9rem,13vw,4rem)}.machine iframe{height:420px}.latch a{padding:13px 12px;gap:9px}.fact{display:block}.fact b{display:block;margin-bottom:5px}.case h2{font-size:3rem}.below-machine{align-items:flex-start;flex-direction:column}}
+    @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.machine{transition:none}}
+  </style>
+</head>
+<body>
+  <div class="shell" id="site">
+    <div class="backdrop" aria-hidden="true"></div>
+    <header class="header">
+      <a class="brand" href="./"><span>РОМАН ТАЛЮТИН</span><small>Продукты. Системы. Истории.</small></a>
+      <nav aria-label="Навигация"><a href="#case">О решении</a><a href="mailto:info@yarcyberseason.ru">Контакт</a></nav>
+    </header>
+    <main class="content">
+      <section class="intro" aria-labelledby="main-title">
+        <p class="eyebrow">Работы в действии / Россия</p>
+        <h1 id="main-title">Посторонним<br>можно<span>.</span></h1>
+        <p class="lead">Я открываю работы, а не коллекцию обложек. Смотрите, как они устроены и что уже работает.</p>
+        <p class="aside">Здесь интерфейс выходит из кейса. Меняйте условия, забирайте расчёт и проверьте его у себя.</p>
+      </section>
+      <section class="machine-zone" id="machine-zone" aria-label="Работающий планировщик турнирного дня">
+        <div class="machine-status" id="machine-status">Рабочий прототип / турнирный день</div>
+        <div class="machine" id="machine">
+          <iframe id="planner-frame" src="tool.html?embedded=1" title="Планировщик турнирного дня" loading="eager"></iframe>
+        </div>
+        <div class="latch"><a id="detach" href="tool.html" target="_blank" rel="noopener" aria-label="Унести инструмент: открыть в отдельной вкладке">Унести инструмент <span aria-hidden="true">→</span></a></div>
+        <div class="socket" id="socket"><div class="socket-inner"><strong>Здесь был<br>инструмент.</strong><p>Он открылся в отдельной вкладке. Расчёт остался рабочим.</p><a id="reopen" href="tool.html" target="_blank" rel="noopener">Открыть ещё раз ↗</a><br><button id="return" type="button">Вернуть на место ←</button></div></div>
+        <div class="below-machine"><span>02 / 02 &nbsp; Сайт турнира · рабочий образец</span><a href="tool.html" id="direct-link">Открыть инструмент отдельно ↗</a></div>
+      </section>
+      <aside class="case" id="case" aria-labelledby="case-heading">
+        <div class="case-top"><span class="case-number">02</span><span>Сайт турнира</span></div>
+        <h2 id="case-heading">Работает.<br>Забирайте<span>.</span></h2>
+        <div class="fact"><b>Настройка</b><p>8 или 16 команд, одна или две площадки, матч 45 или 60 минут. Меняйте параметры прямо в экране.</p></div>
+        <div class="fact"><b>Расчёт</b><p>Предварительный план матчей для олимпийской системы. Раунды ждут завершения предыдущих; между слотами 15 минут.</p></div>
+        <div class="fact"><b>С собой</b><p>Инструмент откроется отдельно. Там можно выгрузить расписание и скачать сам планировщик для работы без сети.</p></div>
+        <a class="contact" href="mailto:info@yarcyberseason.ru?subject=%D0%A0%D0%B0%D0%B7%D0%BE%D0%B1%D1%80%D0%B0%D1%82%D1%8C%20%D0%B7%D0%B0%D0%B4%D0%B0%D1%87%D1%83">Нужно под вашу задачу? Написать ↗</a>
+      </aside>
+    </main>
+    <footer class="footer"><a href="mailto:info@yarcyberseason.ru?subject=%D0%9F%D0%BE%D0%BD%D1%8F%D1%82%D0%BD%D0%B0%D1%8F%20%D0%B7%D0%B0%D0%B4%D0%B0%D1%87%D0%B0">У меня понятная задача ↗</a><small>Демонстрация механики. Даты, команды и результаты турнира здесь не хранятся.</small></footer>
+  </div>
+  <script>
+    const shell=document.getElementById('site');
+    const frame=document.getElementById('planner-frame');
+    const detach=document.getElementById('detach');
+    const reopen=document.getElementById('reopen');
+    const direct=document.getElementById('direct-link');
+    const status=document.getElementById('machine-status');
+    let state={teams:8,venues:1,duration:45};
+    function toolUrl(){const q=new URLSearchParams(state);return `tool.html?${q.toString()}`}
+    function syncLinks(){detach.href=toolUrl();reopen.href=toolUrl();direct.href=toolUrl()}
+    window.addEventListener('message',event=>{
+      if(event.source!==frame.contentWindow||event.origin!==location.origin||event.data?.type!=='planner-state')return;
+      const s=event.data;
+      if(![8,16].includes(s.teams)||![1,2].includes(s.venues)||![45,60].includes(s.duration))return;
+      state={teams:s.teams,venues:s.venues,duration:s.duration};syncLinks();
+    });
+    detach.addEventListener('click',event=>{
+      event.preventDefault();
+      const newTab=window.open(detach.href,'_blank');
+      if(newTab){newTab.opener=null;shell.classList.add('detached');status.textContent='Инструмент вынут / открылся отдельно';}
+      else{status.textContent='Новая вкладка заблокирована. Откройте инструмент по ссылке ниже.';direct.focus();}
+    });
+    document.getElementById('return').addEventListener('click',()=>{shell.classList.remove('detached');status.textContent='Рабочий прототип / турнирный день';detach.focus()});
+    syncLinks();
+  </script>
+</body>
+</html>
