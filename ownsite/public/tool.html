@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08121c">
+  <title>Турнирный день — планировщик</title>
+  <meta name="description" content="Планировщик расписания турнира по олимпийской системе. Работает отдельно и сохраняется для работы без сети.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%2306111d'/%3E%3Cpath d='M12 17h40v8H12zm0 18h40v8H12z' fill='%230066ef'/%3E%3Cpath d='M21 13v38M43 13v38' stroke='white' stroke-width='7'/%3E%3C/svg%3E">
+  <link id="tool-style" rel="stylesheet" href="/tool.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="top"><div class="brand"><span class="mark" aria-hidden="true">Я<b>К</b>С</span><small>YAR CYBER<br>SEASON</small></div><a class="origin" href="/#portable-tool">Вернуться к работе ↗</a></header>
+    <h1>Турнирный день</h1>
+    <p class="sub">Черновое расписание для олимпийской системы. Старт в 10:00, между слотами 15 минут.</p>
+    <div class="grid" role="group" aria-label="Параметры турнира">
+      <section class="group" aria-labelledby="teams-label"><h2 id="teams-label">Команды</h2><div class="choices" id="teams"><button type="button" data-value="8" aria-pressed="true">8</button><button type="button" data-value="16" aria-pressed="false">16</button></div></section>
+      <section class="group" aria-labelledby="venues-label"><h2 id="venues-label">Площадки</h2><div class="choices" id="venues"><button type="button" data-value="1" aria-pressed="true">1</button><button type="button" data-value="2" aria-pressed="false">2</button></div></section>
+      <section class="group" aria-labelledby="duration-label"><h2 id="duration-label">Матч, мин</h2><div class="choices" id="duration"><button type="button" data-value="45" aria-pressed="true">45</button><button type="button" data-value="60" aria-pressed="false">60</button></div></section>
+    </div>
+    <section class="schedule" aria-labelledby="schedule-label"><div class="schedule-title"><h2 id="schedule-label">Предварительное расписание</h2><span class="summary" id="summary" aria-live="polite"></span></div>
+      <div class="table-scroll"><table><caption class="screen-reader">Список матчей по раундам с временем и площадкой</caption><thead><tr><th>Время</th><th>Площадка</th><th>Матч</th><th>Пара</th></tr></thead><tbody id="schedule-body"></tbody></table></div><p class="notice" id="notice" aria-live="polite"></p>
+    </section>
+    <div class="actions"><button class="secondary" type="button" id="download-csv">Скачать результат · CSV</button><button type="button" id="reset">Новый расчёт</button></div>
+    <div class="offline">Этот экран может работать без сайта. <button type="button" id="download-tool">Скачать инструмент · HTML</button> — параметры и расчёт останутся внутри файла.</div>
+  </main>
+  <script id="state" type="application/json">{"teams":8,"venues":1,"duration":45}</script>
+  <script id="tool-runtime" defer src="/tool.js"></script>
+</body>
+</html>

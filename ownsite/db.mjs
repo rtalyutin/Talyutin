@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { seedWorks } from './seed-works.mjs';
 
 const defaultPath = resolve(process.cwd(), 'data', 'portfolio.sqlite');
 
@@ -23,86 +24,76 @@ export function openDatabase(path = defaultPath) {
       live_url TEXT,
       poster TEXT,
       reveal_json TEXT NOT NULL DEFAULT '[]',
+      tools_json TEXT NOT NULL DEFAULT '[]',
       featured_order INTEGER,
       catalogue_order INTEGER NOT NULL DEFAULT 0,
       show INTEGER NOT NULL DEFAULT 0 CHECK (show IN (0, 1)),
       updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS works_public_order ON works(show, featured_order, catalogue_order);
-    CREATE TABLE IF NOT EXISTS site_settings (
-      key TEXT PRIMARY KEY,
-      value TEXT NOT NULL
-    );
+    CREATE TABLE IF NOT EXISTS site_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS env_managed_contacts (key TEXT PRIMARY KEY);
+    CREATE TABLE IF NOT EXISTS schema_migrations (name TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
   `);
-  const columns = db.prepare('PRAGMA table_info(works)').all().map(row => row.name);
-  if (!columns.includes('display_title')) db.exec('ALTER TABLE works ADD COLUMN display_title TEXT');
+  const columns = new Set(db.prepare('PRAGMA table_info(works)').all().map(row => row.name));
+  if (!columns.has('display_title')) db.exec('ALTER TABLE works ADD COLUMN display_title TEXT');
+  if (!columns.has('tools_json')) db.exec("ALTER TABLE works ADD COLUMN tools_json TEXT NOT NULL DEFAULT '[]'");
   seed(db);
   return db;
 }
 
-const seedWorks = [
-  {
-    id: 'ycs-miniapp', slug: 'ycs-miniapp', title: 'ЯрКиберСезон', display_title: 'ЯКС', kind: 'it',
-    category: 'Telegram Mini App', status: 'Работает',
-    role: 'Инициатор и организатор ЯКС; постановка сценариев миниаппы',
-    summary: 'Турнир, участники, расписание и матчи — прямо на экране приложения.',
-    theme: 'tear', orientation: 'portrait',
-    live_url: 'https://xn--90aiaibl0ahlel5n.xn--p1ai/tg',
-    poster: '/assets/ycs-miniapp-poster.jpg', featured_order: 1, catalogue_order: 1,
-    show: 1,
-    reveal_json: JSON.stringify([
-      { heading: 'Задача', body: 'Сделать турнир доступным с телефона: от обзора и состава команд до расписания и сетки.' },
-      { heading: 'Решение', body: 'Компактный интерфейс с отдельными состояниями турнира. Пользователь открывает реальный сезон и переходит к нужному разделу.' },
-      { heading: 'Проверить самому', body: 'Откройте действующее приложение, выберите турнир и переключитесь на «Участники» или «Матчи».' }
-    ])
-  },
-  {
-    id: 'ycs-site', slug: 'ycs-site', title: 'ЯрКиберСезон', display_title: 'ЯКС', kind: 'it',
-    category: 'Сайт турнира', status: 'Работает',
-    role: 'Инициатор и организатор ЯКС; развитие сайта сезона',
-    summary: 'Сезон, турнирные страницы, команды и результаты в одном живом продукте.',
-    theme: 'arena', orientation: 'landscape',
-    live_url: 'https://xn--90aiaibl0ahlel5n.xn--p1ai/',
-    poster: '/assets/ycs-backdrop.jpg', featured_order: 2, catalogue_order: 2,
-    show: 1,
-    reveal_json: JSON.stringify([
-      { heading: 'Задача', body: 'Собрать разрозненную информацию турнира в понятный маршрут для участников и зрителей.' },
-      { heading: 'Решение', body: 'На сайте доступны текущий сезон, архив, команды, расписание и результаты. Данные и состояния разделены по турнирным страницам.' },
-      { heading: 'Проверить самому', body: 'Откройте сайт, перейдите в архив или на страницу команды и вернитесь к турниру.' }
-    ])
-  }
-];
-
 function seed(db) {
   const insert = db.prepare(`INSERT OR IGNORE INTO works
     (id, slug, title, display_title, kind, category, status, role, summary, theme, orientation,
-      live_url, poster, reveal_json, featured_order, catalogue_order, show)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+      live_url, poster, reveal_json, tools_json, featured_order, catalogue_order, show)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
   for (const w of seedWorks) {
     insert.run(w.id, w.slug, w.title, w.display_title ?? null, w.kind, w.category, w.status, w.role,
-      w.summary, w.theme, w.orientation ?? 'portrait', w.live_url ?? null,
-      w.poster ?? null, w.reveal_json ?? '[]', w.featured_order ?? null,
-      w.catalogue_order, w.show);
+      w.summary, w.theme, w.orientation ?? 'portrait', w.live_url ?? null, w.poster ?? null,
+      JSON.stringify(w.reveal_json ?? []), JSON.stringify(w.tools_json ?? []),
+      w.featured_order ?? null, w.catalogue_order, w.show ?? 0);
   }
-  db.prepare("UPDATE works SET display_title = 'ЯКС' WHERE id IN ('ycs-miniapp', 'ycs-site') AND display_title IS NULL").run();
-  const insertSetting = db.prepare('INSERT OR IGNORE INTO site_settings (key, value) VALUES (?, ?)');
-  for (const [key, value] of [['phone', process.env.PUBLIC_PHONE], ['email', process.env.PUBLIC_EMAIL]]) {
-    if (validContactValue(key, value)) insertSetting.run(key, value);
+  // A one-time local migration keeps legacy records but removes duplicate public YCS cases.
+  if (!db.prepare("SELECT 1 FROM schema_migrations WHERE name = 'unify-ycs' ").get()) {
+    db.exec('BEGIN');
+    try {
+      db.prepare("UPDATE works SET show = 0 WHERE id IN ('ycs-miniapp', 'ycs-site')").run();
+      db.prepare("INSERT INTO schema_migrations(name) VALUES ('unify-ycs')").run();
+      db.exec('COMMIT');
+    } catch (error) { db.exec('ROLLBACK'); throw error; }
   }
+  const insertSetting = db.prepare('INSERT INTO site_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value');
+  const markEnv = db.prepare('INSERT OR IGNORE INTO env_managed_contacts (key) VALUES (?)');
+  const wasEnv = db.prepare('SELECT 1 FROM env_managed_contacts WHERE key = ?');
+  const deleteSetting = db.prepare('DELETE FROM site_settings WHERE key = ?');
+  const unmarkEnv = db.prepare('DELETE FROM env_managed_contacts WHERE key = ?');
+  db.exec('BEGIN');
+  try {
+    for (const [key, value] of [['phone', process.env.PUBLIC_PHONE], ['email', process.env.PUBLIC_EMAIL]]) {
+      if (validContactValue(key, value)) { insertSetting.run(key, value); markEnv.run(key); }
+      else if (wasEnv.get(key)) { deleteSetting.run(key); unmarkEnv.run(key); }
+    }
+    db.exec('COMMIT');
+  } catch (error) { db.exec('ROLLBACK'); throw error; }
+}
+
+function parseArray(value) {
+  try { const parsed = typeof value === 'string' ? JSON.parse(value) : value; return Array.isArray(parsed) ? parsed : []; }
+  catch { return []; }
 }
 
 function mapPublic(row) {
+  const tools = parseArray(row.tools_json);
   return {
     id: row.id, slug: row.slug, title: row.title, displayTitle: row.display_title || row.title, kind: row.kind,
-    category: row.category, status: row.status, role: row.role,
-    summary: row.summary, theme: row.theme, orientation: row.orientation,
-    liveUrl: row.live_url, poster: row.poster,
-    reveal: JSON.parse(row.reveal_json), featuredOrder: row.featured_order
+    category: row.category, status: row.status, role: row.role, summary: row.summary,
+    theme: row.theme, orientation: row.orientation, liveUrl: row.live_url, poster: row.poster,
+    reveal: parseArray(row.reveal_json), tools, featuredOrder: row.featured_order
   };
 }
 
 const publicColumns = `id, slug, title, display_title, kind, category, status, role, summary, theme,
-  orientation, live_url, poster, reveal_json, featured_order`;
+  orientation, live_url, poster, reveal_json, tools_json, featured_order`;
 
 export function publicWorks(db) {
   return db.prepare(`SELECT ${publicColumns} FROM works WHERE show = 1
@@ -111,8 +102,7 @@ export function publicWorks(db) {
 }
 
 export function publicWork(db, slug) {
-  const row = db.prepare(`SELECT ${publicColumns} FROM works
-    WHERE slug = ? AND show = 1`).get(slug);
+  const row = db.prepare(`SELECT ${publicColumns} FROM works WHERE slug = ? AND show = 1`).get(slug);
   return row ? mapPublic(row) : null;
 }
 

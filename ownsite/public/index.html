@@ -70,6 +70,10 @@
             <h2>Что за решением</h2>
             <div class="reveal-body" id="reveal-body">{{REVEAL}}</div>
           </div>
+          <fieldset class="tool-switcher" id="tool-switcher" {{TOOL_SWITCHER_HIDDEN}}>
+            <legend>Действующие экраны</legend>
+            <div id="tool-list">{{TOOL_ENTRIES}}</div>
+          </fieldset>
           <div class="case-actions" aria-label="Режим просмотра">
             <a href="/?mode=view" id="view-action" data-mode-link="view">Посмотреть <span aria-hidden="true">—</span></a>
             <a href="/?mode=reveal" id="reveal-action" data-mode-link="reveal">Раскрыть решение <span aria-hidden="true">—</span></a>
@@ -90,6 +94,26 @@
         </div>
       </div>
       <p class="sr-only" id="case-announcement" aria-live="polite"></p>
+    </section>
+
+    <section class="portable-tool" id="portable-tool" aria-labelledby="portable-title" {{PORTABLE_HIDDEN}}>
+      <div class="portable-copy">
+        <span class="portable-kicker">ЯКС / ИНСТРУМЕНТ ИЗ КЕЙСА</span>
+        <h2 id="portable-title">Работу можно<br>унести<span>.</span></h2>
+        <p>Планируйте день турнира прямо здесь. Настройте команды, площадки и длительность матча — потом заберите расчёт в отдельную вкладку.</p>
+        <p class="portable-note">Рабочий прототип олимпийской системы. Он не строит расписание действующего турнира ЯКС и не хранит команды или результаты.</p>
+      </div>
+      <div class="portable-bay" id="portable-bay" aria-label="Отделяемый планировщик турнирного дня">
+        <p class="portable-status" id="portable-status" aria-live="polite">РАБОЧИЙ ПРОТОТИП / ТУРНИРНЫЙ ДЕНЬ</p>
+        <div class="portable-machine" id="portable-machine">
+          <iframe id="planner-frame" src="/tool.html?embedded=1" title="Планировщик турнирного дня: настройте турнир и просмотрите расписание" loading="lazy"></iframe>
+        </div>
+        <div class="portable-latch" id="portable-latch"><a id="detach-tool" href="/tool.html" target="_blank" rel="noopener" aria-label="Унести инструмент: открыть с выбранными параметрами в новой вкладке">Унести инструмент <span aria-hidden="true">→</span></a></div>
+        <div class="portable-socket" id="portable-socket" hidden>
+          <div class="portable-socket-inner"><strong>Здесь был<br>инструмент.</strong><p>Планировщик открылся в отдельной вкладке. Расчёт можно выгрузить в CSV или сохранить инструмент для работы без сети.</p><a id="open-tool-again" href="/tool.html" target="_blank" rel="noopener">Открыть ещё раз ↗</a><button id="return-tool" type="button">Вернуть на место ←</button></div>
+        </div>
+        <a class="portable-direct" id="direct-tool" href="/tool.html" target="_blank" rel="noopener">Открыть планировщик отдельно ↗</a>
+      </div>
     </section>
 
     <section class="works-section" id="works" aria-labelledby="works-title">
