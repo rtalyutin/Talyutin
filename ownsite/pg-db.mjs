@@ -1,13 +1,14 @@
 import { Pool } from 'pg';
+import { contentRevision } from './seed-works.mjs';
 
 const publicColumns = `id, slug, title, display_title, kind, category, status, role, summary, theme,
-  orientation, live_url, poster, reveal_json, tools_json, featured_order`;
+  orientation, live_url, embed_allowed, links_json, poster, reveal_json, tools_json, featured_order`;
 
 const insertWork = `INSERT INTO works
   (id, slug, title, display_title, kind, category, status, role, summary, theme, orientation,
-    live_url, poster, reveal_json, tools_json, featured_order, catalogue_order, show)
+    live_url, poster, reveal_json, tools_json, featured_order, catalogue_order, show, embed_allowed, links_json)
   VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
-    $14::jsonb, $15::jsonb, $16, $17, $18)
+    $14::jsonb, $15::jsonb, $16, $17, $18, $19, $20::jsonb)
   ON CONFLICT (id) DO NOTHING`;
 
 function jsonArray(value, field) {
@@ -22,7 +23,8 @@ export function mapPostgresPublicWork(row) {
     displayTitle: row.display_title || row.title, kind: row.kind,
     category: row.category, status: row.status, role: row.role,
     summary: row.summary, theme: row.theme, orientation: row.orientation,
-    liveUrl: row.live_url, poster: row.poster,
+    liveUrl: row.live_url, embedAllowed: row.embed_allowed === true,
+    links: jsonArray(row.links_json, 'links_json'), poster: row.poster,
     reveal: jsonArray(row.reveal_json, 'reveal_json'),
     tools: jsonArray(row.tools_json, 'tools_json'),
     featuredOrder: row.featured_order
@@ -80,6 +82,14 @@ async function migrateAndSeed(pool, seedWorks, contactSettings) {
       )`);
       await client.query('INSERT INTO schema_migrations (version) VALUES (1)');
     }
+    const { rows: schemaV2 } = await client.query('SELECT version FROM schema_migrations WHERE version = 2');
+    if (!schemaV2.length) {
+      await client.query('ALTER TABLE works ADD COLUMN IF NOT EXISTS embed_allowed BOOLEAN NOT NULL DEFAULT FALSE');
+      await client.query(`ALTER TABLE works ADD COLUMN IF NOT EXISTS links_json JSONB NOT NULL DEFAULT '[]'::jsonb
+        CHECK (jsonb_typeof(links_json) = 'array')`);
+      await client.query('ALTER TABLE works ALTER COLUMN show DROP NOT NULL');
+      await client.query('INSERT INTO schema_migrations (version) VALUES (2)');
+    }
     await client.query('CREATE TABLE IF NOT EXISTS env_managed_contacts (key TEXT PRIMARY KEY)');
 
     for (const work of seedWorks) {
@@ -90,8 +100,34 @@ async function migrateAndSeed(pool, seedWorks, contactSettings) {
         JSON.stringify(jsonArray(work.reveal_json, 'reveal_json')),
         JSON.stringify(jsonArray(work.tools_json, 'tools_json')),
         work.featured_order ?? null, work.catalogue_order ?? 0,
-        work.show === true || work.show === 1
+        work.show === true || work.show === 1,
+        work.embed_allowed === true || work.embed_allowed === 1,
+        JSON.stringify(jsonArray(work.links_json, 'links_json'))
       ]);
+    }
+
+    const { rows: revisions } = await client.query("SELECT value FROM site_settings WHERE key = 'content_revision'");
+    if (revisions[0]?.value !== contentRevision) {
+      // Apply the approved editorial snapshot once; later starts preserve manual edits.
+      for (const work of seedWorks) {
+        await client.query(`UPDATE works SET slug=$2, title=$3, display_title=$4, kind=$5,
+          category=$6, status=$7, role=$8, summary=$9, theme=$10, orientation=$11,
+          live_url=$12, poster=$13, reveal_json=$14::jsonb, featured_order=$15,
+          catalogue_order=$16, show=$17, embed_allowed=$18, links_json=$19::jsonb,
+          updated_at=now() WHERE id=$1`, [
+          work.id, work.slug, work.title, work.display_title ?? null, work.kind,
+          work.category, work.status, work.role, work.summary, work.theme,
+          work.orientation ?? 'portrait', work.live_url ?? null, work.poster ?? null,
+          JSON.stringify(jsonArray(work.reveal_json, 'reveal_json')),
+          work.featured_order ?? null, work.catalogue_order ?? 0,
+          work.show === true || work.show === 1, work.embed_allowed === true || work.embed_allowed === 1,
+          JSON.stringify(jsonArray(work.links_json, 'links_json'))
+        ]);
+      }
+      await client.query(`UPDATE works SET show=FALSE WHERE id IN
+        ('ycs-miniapp','ycs-site','ycs-easter-eggs','documents','dota-huds','statistics-extension','wb-cards','sparrow')`);
+      await client.query(`INSERT INTO site_settings (key,value) VALUES ('content_revision',$1)
+        ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value`, [contentRevision]);
     }
 
     for (const key of ['phone', 'email']) {

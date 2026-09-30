@@ -1,51 +1,22 @@
 const $ = selector => document.querySelector(selector);
-const state = { works: [], selected: null, selectedToolId: null, mode: 'view', rx: -5, ry: -15 };
+const state = { works: [], selected: null, mode: 'view', rx: -5, ry: -15 };
 const device = $('#device');
 const screen = $('#device-screen');
 const viewport = $('#screen-viewport');
 const poster = $('#screen-poster');
+const placeholder = $('#screen-placeholder');
 const activate = $('#activate-screen');
 
 function desiredState() {
   const params = new URLSearchParams(location.search);
-  return { slug: params.get('work'), toolId: params.get('tool'), mode: params.get('mode') === 'reveal' ? 'reveal' : 'view' };
+  return { slug: params.get('work'), mode: params.get('mode') === 'reveal' ? 'reveal' : 'view' };
 }
 
-function address(slug, mode, replace = false, toolId = slug === state.selected ? state.selectedToolId : null) {
+function address(slug, mode, replace = false) {
   const url = new URL(location.href);
   url.searchParams.set('work', slug);
   url.searchParams.set('mode', mode);
-  if (toolId) url.searchParams.set('tool', toolId);
-  else url.searchParams.delete('tool');
   history[replace ? 'replaceState' : 'pushState']({}, '', url);
-}
-
-function safeWebUrl(value) {
-  if (typeof value !== 'string' || !value.trim() || value.trim().startsWith('#')) return null;
-  try {
-    const url = new URL(value, location.origin);
-    return ['http:', 'https:'].includes(url.protocol) ? url.href : null;
-  } catch { return null; }
-}
-
-function toolsFor(work) {
-  const supplied = Array.isArray(work.tools) ? work.tools : [];
-  const tools = supplied.filter(item => item && typeof item === 'object').map((item, index) => ({
-    id: String(item.id ?? `tool-${index + 1}`),
-    label: String(item.label ?? `Экран ${index + 1}`),
-    url: safeWebUrl(item.url),
-    orientation: item.orientation === 'landscape' ? 'landscape' : item.orientation === 'portrait' ? 'portrait' : work.orientation,
-    poster: item.poster || work.poster,
-    category: item.category || work.category
-  })).filter(item => item.url);
-  if (tools.length) return tools;
-  const url = safeWebUrl(work.liveUrl);
-  return url ? [{ id: 'main', label: work.category, url, orientation: work.orientation, poster: work.poster, category: work.category }] : [];
-}
-
-function selectedTool() {
-  const work = state.works.find(item => item.slug === state.selected);
-  return work && toolsFor(work).find(item => item.id === state.selectedToolId);
 }
 
 function updateRotation() {
@@ -56,36 +27,47 @@ function updateRotation() {
 function clearScreen() {
   screen.querySelector('iframe')?.remove();
   poster.hidden = true;
+  placeholder.hidden = false;
   activate.hidden = false;
 }
 
-function setPoster(work, tool) {
+function setPoster(work) {
   poster.hidden = true;
-  poster.alt = `Кадр работы ${work.title}${tool ? `: ${tool.label}` : ''}`;
-  poster.onload = () => { if (poster.naturalWidth && !screen.querySelector('iframe')) poster.hidden = false; };
-  poster.onerror = () => { poster.hidden = true; };
-  const imageUrl = safeWebUrl(tool?.poster || work.poster);
-  if (imageUrl) {
-    poster.src = imageUrl;
-    if (poster.complete && poster.naturalWidth && !screen.querySelector('iframe')) poster.hidden = false;
+  poster.alt = `Кадр работы ${work.title}`;
+  poster.onload = () => {
+    if (poster.naturalWidth && !screen.querySelector('iframe')) {
+      poster.hidden = false;
+      placeholder.hidden = true;
+    }
+  };
+  poster.onerror = () => { poster.hidden = true; placeholder.hidden = false; };
+  if (work.poster) {
+    poster.src = work.poster;
+    if (poster.complete && poster.naturalWidth && !screen.querySelector('iframe')) {
+      poster.hidden = false;
+      placeholder.hidden = true;
+    }
   } else {
     poster.removeAttribute('src');
+    placeholder.hidden = false;
   }
 }
 
-function renderToolSwitcher(tools, activeId) {
-  const fieldset = $('#tool-switcher');
-  const list = $('#tool-list');
-  fieldset.hidden = tools.length < 2;
-  list.replaceChildren();
-  for (const tool of tools) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.dataset.tool = tool.id;
-    button.textContent = tool.label;
-    button.setAttribute('aria-pressed', String(tool.id === activeId));
-    list.append(button);
+function renderWorkLinks(work) {
+  const container = $('#external-links');
+  container.replaceChildren();
+  const links = Array.isArray(work.links) && work.links.length
+    ? work.links
+    : work.liveUrl ? [{ label: 'Открыть действующий инструмент', href: work.liveUrl }] : [];
+  for (const link of links) {
+    const a = document.createElement('a');
+    a.href = link.href;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.textContent = `${link.label} ↗`;
+    container.append(a);
   }
+  container.hidden = !links.length;
 }
 
 function renderReveal(work) {
@@ -141,18 +123,14 @@ function renderSwitcher() {
   });
 }
 
-function show(slug, mode, announce = true, requestedToolId = null) {
+function show(slug, mode, announce = true) {
   const work = state.works.find(w => w.slug === slug) ?? state.works[0];
   if (!work) return;
   const changed = state.selected !== work.slug;
-  const tools = toolsFor(work);
-  const tool = tools.find(item => item.id === (requestedToolId || (changed ? null : state.selectedToolId))) || tools[0] || null;
-  const toolChanged = changed || state.selectedToolId !== tool?.id;
   state.selected = work.slug;
-  state.selectedToolId = tool?.id || null;
   state.mode = mode;
   document.body.dataset.theme = work.theme;
-  document.body.dataset.orientation = tool?.orientation || work.orientation;
+  document.body.dataset.orientation = work.orientation;
   document.body.dataset.mode = mode;
   $('#case-title').textContent = work.displayTitle;
   $('#case-title').setAttribute('aria-label', work.title);
@@ -161,7 +139,9 @@ function show(slug, mode, announce = true, requestedToolId = null) {
   $('#case-summary').textContent = work.summary;
   $('#case-role').textContent = work.role;
   $('#case-status').textContent = work.status;
-  renderToolSwitcher(tools, state.selectedToolId);
+  $('#screen-placeholder-category').textContent = work.category;
+  $('#screen-placeholder-title').textContent = work.displayTitle;
+  $('#activate-label').textContent = work.embedAllowed ? 'Открыть живой экран' : 'Открыть в новой вкладке';
   const i = state.works.findIndex(w => w.slug === work.slug) + 1;
   $('#case-number').textContent = String(i).padStart(2, '0');
   $('#case-count').textContent = `${String(i).padStart(2, '0')} / ${String(state.works.length).padStart(2, '0')}`;
@@ -176,20 +156,17 @@ function show(slug, mode, announce = true, requestedToolId = null) {
     if (a.dataset.modeLink === mode) a.setAttribute('aria-current', 'true');
     else a.removeAttribute('aria-current');
   }
-  const external = $('#external-link');
-  external.href = tool?.url || '#works';
-  external.hidden = !tool;
-  external.textContent = tool ? `Открыть действующий экран: ${tool.label} ↗` : '';
+  renderWorkLinks(work);
   document.title = `Роман Талютин — ${work.title} / Работы в действии`;
-  if (toolChanged) {
+  if (changed) {
     clearScreen();
-    setPoster(work, tool);
+    setPoster(work);
     state.rx = -5;
-    state.ry = (tool?.orientation || work.orientation) === 'landscape' ? -10 : -15;
+    state.ry = work.orientation === 'landscape' ? -10 : -15;
     updateRotation();
   }
-  activate.hidden = !tool || !!screen.querySelector('iframe');
-  if (announce) $('#case-announcement').textContent = `${work.category}: ${work.title}${tool ? `, ${tool.label}` : ''}. Режим: ${mode === 'reveal' ? 'разбор решения' : 'просмотр'}.`;
+  activate.hidden = !work.liveUrl || !!screen.querySelector('iframe');
+  if (announce) $('#case-announcement').textContent = `${work.category}: ${work.title}. Режим: ${mode === 'reveal' ? 'разбор решения' : 'просмотр'}.`;
 }
 
 async function refresh(preferURL = false) {
@@ -200,7 +177,6 @@ async function refresh(preferURL = false) {
     if (!Array.isArray(next)) throw new Error('Bad portfolio response');
     const oldSlug = state.selected;
     state.works = next;
-    $('#portable-tool').hidden = !next.some(work => work.slug === 'ycs');
     renderSwitcher();
     const fromURL = desiredState();
     const slug = preferURL ? fromURL.slug : oldSlug || fromURL.slug;
@@ -212,9 +188,8 @@ async function refresh(preferURL = false) {
     }
     $('#case-panel').hidden = false;
     $('.stage').hidden = false;
-    show(chosen.slug, preferURL ? fromURL.mode : state.mode, false, preferURL ? fromURL.toolId : state.selectedToolId);
+    show(chosen.slug, preferURL ? fromURL.mode : state.mode, false);
     if (fromURL.slug && !next.some(w => w.slug === fromURL.slug)) address(chosen.slug, state.mode, true);
-    else if (preferURL && fromURL.toolId && fromURL.toolId !== state.selectedToolId) address(chosen.slug, state.mode, true, state.selectedToolId);
   } catch (error) {
     console.error('Не удалось обновить витрину', error);
   }
@@ -247,15 +222,6 @@ document.addEventListener('click', event => {
     if (workLink.closest('#work-list')) scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
     return;
   }
-  const toolButton = event.target.closest('#tool-list button[data-tool]');
-  if (toolButton) {
-    const id = toolButton.dataset.tool;
-    if (id === state.selectedToolId) return;
-    address(state.selected, state.mode, false, id);
-    show(state.selected, state.mode, true, id);
-    [...document.querySelectorAll('#tool-list button[data-tool]')].find(button => button.dataset.tool === id)?.focus();
-    return;
-  }
   const modeLink = event.target.closest('[data-mode-link]');
   if (modeLink && !event.metaKey && !event.ctrlKey && event.button === 0) {
     event.preventDefault();
@@ -267,15 +233,14 @@ document.addEventListener('click', event => {
 
 activate.addEventListener('click', () => {
   const work = state.works.find(w => w.slug === state.selected);
-  const tool = selectedTool();
-  if (!work || !tool) return;
-  if (matchMedia('(max-width: 700px)').matches) {
-    window.open(tool.url, '_blank', 'noopener');
+  if (!work?.liveUrl) return;
+  if (!work.embedAllowed || matchMedia('(max-width: 820px)').matches) {
+    window.open(work.liveUrl, '_blank', 'noopener');
     return;
   }
   const frame = document.createElement('iframe');
-  frame.src = tool.url;
-  frame.title = `Действующий экран: ${tool.label}, ${work.title}`;
+  frame.src = work.liveUrl;
+  frame.title = `Действующий инструмент: ${work.title}, ${work.category}`;
   frame.loading = 'eager';
   frame.referrerPolicy = 'strict-origin-when-cross-origin';
   frame.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups');
@@ -310,52 +275,8 @@ for (const end of ['pointerup', 'pointercancel', 'lostpointercapture']) grip.add
 
 addEventListener('popstate', () => {
   const next = desiredState();
-  if (state.works.some(w => w.slug === next.slug)) {
-    show(next.slug, next.mode, true, next.toolId);
-    if (next.toolId && next.toolId !== state.selectedToolId) address(state.selected, state.mode, true, state.selectedToolId);
-  }
+  if (state.works.some(w => w.slug === next.slug)) show(next.slug, next.mode);
   else refresh(true);
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
-
-// The separate planner is a self-contained prototype. The iframe only shares its three choices.
-const plannerFrame = $('#planner-frame');
-const detachTool = $('#detach-tool');
-const toolStatus = $('#portable-status');
-const plannerState = { teams: 8, venues: 1, duration: 45 };
-function plannerUrl() { return `/tool.html?${new URLSearchParams(plannerState)}`; }
-function syncPlannerLinks() {
-  for (const id of ['detach-tool', 'open-tool-again', 'direct-tool']) $(`#${id}`).href = plannerUrl();
-}
-addEventListener('message', event => {
-  if (event.source !== plannerFrame.contentWindow || event.origin !== location.origin || event.data?.type !== 'planner-state') return;
-  const next = event.data;
-  if (![8, 16].includes(next.teams) || ![1, 2].includes(next.venues) || ![45, 60].includes(next.duration)) return;
-  Object.assign(plannerState, { teams: next.teams, venues: next.venues, duration: next.duration });
-  syncPlannerLinks();
-});
-detachTool.addEventListener('click', event => {
-  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
-  event.preventDefault();
-  const newTab = window.open(detachTool.href, '_blank');
-  if (!newTab) {
-    toolStatus.textContent = 'НОВАЯ ВКЛАДКА ЗАБЛОКИРОВАНА / ОТКРОЙТЕ ПЛАНИРОВЩИК ПО ССЫЛКЕ НИЖЕ';
-    $('#direct-tool').focus();
-    return;
-  }
-  newTab.opener = null;
-  $('#portable-machine').hidden = true;
-  $('#portable-latch').hidden = true;
-  $('#portable-socket').hidden = false;
-  toolStatus.textContent = 'ИНСТРУМЕНТ ВЫНУТ / ОТКРЫЛСЯ ОТДЕЛЬНО';
-  $('#return-tool').focus();
-});
-$('#return-tool').addEventListener('click', () => {
-  $('#portable-machine').hidden = false;
-  $('#portable-latch').hidden = false;
-  $('#portable-socket').hidden = true;
-  toolStatus.textContent = 'РАБОЧИЙ ПРОТОТИП / ТУРНИРНЫЙ ДЕНЬ';
-  detachTool.focus();
-});
-syncPlannerLinks();
 refresh(true);

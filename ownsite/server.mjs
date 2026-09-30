@@ -37,15 +37,15 @@ async function renderIndex(url, database) {
   const requested = url.searchParams.get('work');
   const chosen = works.find(w => w.slug === requested) ?? works[0];
   const mode = url.searchParams.get('mode') === 'reveal' ? 'reveal' : 'view';
-  const chosenTool = chosen?.tools?.find(t => t.id === url.searchParams.get('tool')) ?? chosen?.tools?.[0];
-  const toolEntries = (chosen?.tools ?? []).filter(tool => safeLiveUrl(tool.url)).map(tool => `<a href="${escapeHtml(safeLiveUrl(tool.url))}" target="_blank" rel="noopener noreferrer" ${tool.id === chosenTool?.id ? 'aria-current="true"' : ''}>${escapeHtml(tool.label)}</a>`).join('');
   const title = chosen?.title ?? 'Работы в действии';
   const category = chosen?.category ?? 'Портфолио';
   const reveal = chosen?.reveal?.map(part => `<div class="reveal-item"><span>${escapeHtml(part.heading)}</span><p>${escapeHtml(part.body)}</p></div>`).join('') ?? '';
   const entries = works.map((w, i) => `<li><a href="/?work=${encodeURIComponent(w.slug)}&mode=${mode}" data-work="${escapeHtml(w.slug)}" ${w.slug === chosen?.slug ? 'aria-current="true"' : ''}><span>${String(i + 1).padStart(2, '0')}</span><strong>${escapeHtml(w.category)}</strong><small>${escapeHtml(w.title)}</small></a></li>`).join('');
   const catalogue = works.map(w => `<article class="work-row"><span>${escapeHtml(w.category)}</span><h3>${escapeHtml(w.title)}</h3><p>${escapeHtml(w.summary)}</p><a href="/?work=${encodeURIComponent(w.slug)}&mode=reveal">Раскрыть работу ↗</a></article>`).join('');
+  const workLinks = (chosen?.links?.length ? chosen.links : chosen?.liveUrl ? [{ label: 'Открыть действующий инструмент', href: chosen.liveUrl }] : [])
+    .map(link => `<a href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)} ↗</a>`).join('');
   const contacts = await getContacts(database);
-  const outlets = contacts.length ? contacts.map(link => `<a href="${escapeHtml(link.href)}" ${link.href.startsWith('https:') ? 'target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(link.label)} ↗</a>`).join('') : '<span class="contact-pending">Публичные адреса для связи будут добавлены после настройки приложения.</span>';
+  const outlets = contacts.length ? contacts.map(link => `<a href="${escapeHtml(link.href)}" ${link.href.startsWith('https:') ? 'target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(link.label)} ↗</a>`).join('') : '<span class="contact-pending">Публичные адреса для связи будут добавлены в финальную сборку.</span>';
   return readFileSync(join(root, 'index.html'), 'utf8')
     .replaceAll('{{TITLE}}', escapeHtml(title))
     .replaceAll('{{DISPLAY_TITLE}}', escapeHtml(chosen?.displayTitle ?? title))
@@ -53,20 +53,20 @@ async function renderIndex(url, database) {
     .replaceAll('{{SUMMARY}}', escapeHtml(chosen?.summary ?? 'Реальные работы и решения.'))
     .replaceAll('{{ROLE}}', escapeHtml(chosen?.role ?? ''))
     .replaceAll('{{STATUS}}', escapeHtml(chosen?.status ?? ''))
-    .replaceAll('{{LIVE_URL}}', escapeHtml(safeLiveUrl(chosenTool?.url ?? chosen?.liveUrl) ?? '#works'))
-    .replaceAll('{{POSTER}}', escapeHtml(chosenTool?.poster ?? chosen?.poster ?? ''))
+    .replaceAll('{{LIVE_URL}}', escapeHtml(safeLiveUrl(chosen?.liveUrl) ?? '#works'))
+    .replaceAll('{{POSTER}}', escapeHtml(chosen?.poster ?? ''))
+    .replaceAll('{{POSTER_HIDDEN}}', chosen?.poster ? '' : 'hidden')
+    .replaceAll('{{ACTIVATE_LABEL}}', chosen?.embedAllowed ? 'Открыть живой экран' : 'Открыть в новой вкладке')
+    .replaceAll('{{EXTERNAL_LINKS}}', workLinks)
     .replaceAll('{{REVEAL}}', reveal)
     .replaceAll('{{ENTRIES}}', entries)
     .replaceAll('{{CATALOGUE}}', catalogue)
     .replaceAll('{{CONTACT_OUTLETS}}', outlets)
-    .replaceAll('{{TOOL_ENTRIES}}', toolEntries)
-    .replaceAll('{{TOOL_SWITCHER_HIDDEN}}', (chosen?.tools?.length ?? 0) > 1 ? '' : 'hidden')
-    .replaceAll('{{PORTABLE_HIDDEN}}', works.some(w => w.slug === 'ycs') ? '' : 'hidden')
     .replaceAll('{{CASE_COUNT}}', String(works.length).padStart(2, '0'))
     .replaceAll('{{CASE_INDEX}}', String(Math.max(works.findIndex(w => w.slug === chosen?.slug), 0) + 1).padStart(2, '0'))
     .replaceAll('{{MODE}}', mode)
     .replaceAll('{{THEME}}', escapeHtml(chosen?.theme ?? 'neutral'))
-    .replaceAll('{{ORIENTATION}}', escapeHtml(chosenTool?.orientation ?? chosen?.orientation ?? 'portrait'));
+    .replaceAll('{{ORIENTATION}}', escapeHtml(chosen?.orientation ?? 'portrait'));
 }
 
 function send(res, code, type, body, extra = {}) {
