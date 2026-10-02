@@ -4,6 +4,7 @@ import { extname, join, resolve } from 'node:path';
 import { openDatabase, publicWorks, publicWork, publicContacts } from './db.mjs';
 import { openPostgres } from './pg-db.mjs';
 import { seedWorks } from './seed-works.mjs';
+import { openRemotePortfolio } from './remote-db.mjs';
 
 const root = resolve(import.meta.dirname, 'public');
 const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
@@ -128,12 +129,18 @@ async function handle(req, res, database) {
   return send(res, 404, 'text/plain', 'Not found');
 }
 
-async function start() {
-  const database = process.env.DATABASE_URL
-    ? await openPostgres(process.env.DATABASE_URL, seedWorks, { phone: process.env.PUBLIC_PHONE, email: process.env.PUBLIC_EMAIL })
-    : process.env.REQUIRE_DATABASE_URL === '1'
+export async function openConfiguredPortfolio(env = process.env) {
+  if (env.PORTFOLIO_API_URL) return openRemotePortfolio(env.PORTFOLIO_API_URL, { allowLoopback: env.NODE_ENV !== 'production' });
+  if (env.REQUIRE_PORTFOLIO_API_URL === '1') throw new Error('PORTFOLIO_API_URL is required for this deployment');
+  return env.DATABASE_URL
+    ? await openPostgres(env.DATABASE_URL, seedWorks, { phone: env.PUBLIC_PHONE, email: env.PUBLIC_EMAIL })
+    : env.REQUIRE_DATABASE_URL === '1'
       ? (() => { throw new Error('DATABASE_URL is required for this deployment'); })()
-      : openDatabase(process.env.PORTFOLIO_DB || resolve(import.meta.dirname, 'data', 'portfolio.sqlite'));
+      : openDatabase(env.PORTFOLIO_DB || resolve(import.meta.dirname, 'data', 'portfolio.sqlite'));
+}
+
+async function start() {
+  const database = await openConfiguredPortfolio();
   const port = Number(process.env.PORT || 4173);
   createServer(createHandler(database)).listen(port, '0.0.0.0', () => process.stdout.write(`Portfolio listening on port ${port}\n`));
 }
