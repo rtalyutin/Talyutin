@@ -16,6 +16,7 @@ a{color:inherit}
 .masthead nav{margin-left:auto;display:flex;gap:35px;font-size:clamp(14px,.85vw,26px);font-weight:700}
 .masthead nav a{text-decoration:none;border-bottom:1px solid transparent;padding:8px 0}.masthead nav a:hover{border-color:currentColor}
 .hero{min-height:100svh;padding-top:86px;position:relative;display:flex;flex-direction:column;isolation:isolate;overflow:hidden;background:var(--paper)}
+.hero::after{content:"";position:absolute;inset:auto 0 0;height:clamp(60px,5vw,85px);z-index:0;pointer-events:none;background:linear-gradient(180deg,transparent,var(--paper))}
 .scene-texture{position:absolute;inset:0;z-index:-1;background-image:url('/assets/torn-paper.jpg');background-position:57% center;background-size:cover;opacity:.98}
 .scene-texture:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent 64%,rgba(243,240,232,.8) 72%,#f3f0e8 79%)}
 .hero[data-theme="arena"] .scene-texture,body[data-theme="arena"] .scene-texture{filter:hue-rotate(180deg) saturate(.55)}
@@ -88,7 +89,9 @@ body[data-mode="reveal"] .case-view{display:none}body[data-mode="reveal"] .case-
 .two-routes a{display:flex;align-items:center;gap:16px;text-decoration:none;font:900 clamp(17px,1.05vw,38px) var(--display)}.two-routes a:hover{color:var(--hot)}
 /* The paper registry continues the accepted scene below the hero. */
 .works-section,.approach-section,.contact-section{--section-hot:#e53327;position:relative;isolation:isolate;padding:clamp(76px,7.2vw,138px) clamp(18px,4.5vw,86px);background-color:#f4f0e6;background-image:radial-gradient(ellipse at 25% 35%,rgba(255,255,255,.5),transparent 63%),repeating-linear-gradient(113deg,rgba(134,111,73,.025) 0 1px,transparent 1px 4px);color:#111110;overflow:clip}
-.works-section{padding-top:clamp(80px,7vw,135px);padding-bottom:clamp(65px,6vw,115px)}
+.works-section{--paper-edge:polygon(0 44%,1.3% 39%,2.1% 51%,3.7% 34%,5.4% 41%,7.6% 26%,9.2% 39%,10.3% 31%,12.5% 53%,14.1% 46%,16.4% 59%,18.2% 40%,19.7% 48%,22.1% 25%,23.8% 38%,25.5% 30%,28.3% 50%,30.1% 41%,32.5% 53%,34.2% 36%,36.6% 43%,38.1% 25%,40.7% 40%,42.6% 34%,45.2% 55%,47.8% 44%,49.1% 51%,51.7% 30%,53.4% 39%,55.2% 23%,57.9% 37%,59.6% 29%,62.3% 48%,64.1% 39%,66.7% 56%,68.3% 44%,70.8% 49%,72.6% 31%,74.9% 40%,76.2% 28%,78.8% 47%,80.5% 38%,82.7% 53%,84.6% 41%,86.1% 47%,88.4% 28%,90.2% 37%,92.7% 24%,94.1% 42%,96.6% 33%,98.2% 47%,100% 37%,100% 100%,0 100%);padding:clamp(54px,5.2vw,100px) clamp(26px,3vw,110px) clamp(65px,6vw,115px);background-color:var(--paper);overflow:visible}
+.works-section::before,.works-section::after{content:"";position:absolute;inset:-24px 0 auto;height:26px;z-index:-1;pointer-events:none;clip-path:var(--paper-edge);background:var(--paper)}
+.works-section::after{inset:-26px 0 auto;z-index:-2;background:rgba(62,53,40,.12)}
 .works-section .section-heading,.approach-section .section-heading{max-width:none;margin:0 0 clamp(28px,2.8vw,54px)}
 .works-section .section-heading>span,.approach-section .section-heading>span,.contact-eyebrow{display:block;font:800 clamp(12px,1.05vw,18px)/1.2 Arial,Helvetica,sans-serif;letter-spacing:.08em;color:var(--section-hot)}
 .works-section .section-heading h2,.approach-section .section-heading h2,.contact-section h2{font:900 clamp(47px,6.7vw,128px)/.86 "Arial Black",Impact,var(--display);letter-spacing:-.065em;text-transform:uppercase;margin:18px 0 0;overflow-wrap:normal}
@@ -200,7 +203,9 @@ body[data-orientation='portrait'] .device{--scale:.85}
 /* Lower sections remain legible on narrow screens without truncating titles. */
 @media(max-width:820px){
   .works-section,.approach-section,.contact-section{padding-left:18px;padding-right:18px}
-  .works-section{padding-top:76px;padding-bottom:70px}
+  .works-section{padding-top:62px;padding-bottom:70px}
+  .hero::after{height:45px}
+  .works-section::before{top:-12px;height:14px}.works-section::after{top:-13px;height:14px}
   .works-section .section-heading,.approach-section .section-heading{margin-bottom:30px}
   .registry-heading{display:block}.works-section .section-heading h2{font-size:clamp(43px,10vw,76px);margin-top:17px}
   .works-section .registry-heading p{margin-top:20px;font-size:17px;max-width:30ch}.desktop-break{display:none}
