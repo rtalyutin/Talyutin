@@ -1,5 +1,6 @@
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { extname, join, resolve } from 'node:path';
 import { openDatabase, publicWorks, publicWork, publicContacts } from './db.mjs';
 import { openPostgres } from './pg-db.mjs';
@@ -7,10 +8,38 @@ import { seedWorks } from './seed-works.mjs';
 import { openRemotePortfolio } from './remote-db.mjs';
 
 const root = resolve(import.meta.dirname, 'public');
-const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
+const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
 const staticFiles = new Set(['/favicon.svg', '/app.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const sharedAssets = new Set(['/assets/torn-paper.jpg', '/assets/tear.webp']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
+const tochkiFiles = new Set([
+  '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
+  '/tochki/worker.js', '/tochki/core.js', '/tochki/capture.js',
+  '/tochki/assets/background-desktop.png', '/tochki/assets/background-mobile.png',
+  '/tochki/assets/board-paper.png', '/tochki/assets/captured-zone-red.png',
+  '/tochki/assets/captured-zone-blue.png',
+]);
+
+function readTochkiFile(path) {
+  if (path.startsWith('/tochki/assets/') && path.endsWith('.png')) {
+    const directory = join(root, 'tochki', 'assets');
+    const name = path.slice('/tochki/assets/'.length);
+    const asset = JSON.parse(readFileSync(join(directory, 'packed-assets.json'), 'utf8'))[name];
+    if (asset) {
+      // Transfer packaging only: reconstruct the original PNG byte for byte.
+      const content = asset.parts.map(part => {
+        if (!/^[a-z-]+\.part-\d{3}\.b64$/.test(part)) throw new Error('Invalid asset part');
+        return readFileSync(join(directory, part), 'utf8');
+      }).join('');
+      const bytes = Buffer.from(content, 'base64');
+      if (bytes.length !== asset.size || createHash('sha256').update(bytes).digest('hex') !== asset.sha256) {
+        throw new Error('Invalid packed asset');
+      }
+      return bytes;
+    }
+  }
+  return readFileSync(resolve(root, '.' + path));
+}
 
 function safeLiveUrl(value) {
   try {
@@ -96,6 +125,12 @@ async function handle(req, res, database) {
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname === '/healthz') {
     return send(res, 200, 'text/plain', 'OK');
+  }
+  if (url.pathname === '/tochki') return send(res, 308, 'text/plain', 'Moved', { Location: '/tochki/' });
+  if (tochkiFiles.has(url.pathname)) {
+    const path = url.pathname === '/tochki/' ? '/tochki/index.html' : url.pathname;
+    try { return send(res, 200, mime[extname(path)], readTochkiFile(path)); }
+    catch { return send(res, 404, 'text/plain', 'Not found'); }
   }
   if (url.pathname === '/readyz') {
     await getWorks(database);

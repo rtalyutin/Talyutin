@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f2e6d1">
+  <title>Точки — Тетрадный бунт</title>
+  <meta name="description" content="Те самые точки на тетрадном листе. Красная ручка у тебя, синяя — у компьютера.">
+  <link rel="stylesheet" href="./game.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <main class="game-shell">
+    <header class="masthead">
+      <div><a class="back-link" href="/">← На сайт</a><p class="eyebrow">ТЕТРАДНЫЙ БУНТ / ПРОТОТИП</p>
+        <h1>Точки<span class="title-dot">.</span></h1><p class="tagline">Урок идёт. Территория — твоя.</p></div>
+      <div class="scoreboard" aria-label="Счёт захваченных точек">
+        <div class="player human"><span class="ink-dot" aria-hidden="true"></span><span>Ты</span><strong id="human-score">0</strong></div>
+        <span class="score-separator" aria-hidden="true">:</span>
+        <div class="player computer"><span class="ink-dot" aria-hidden="true"></span><span>Компьютер</span><strong id="computer-score">0</strong></div>
+      </div>
+    </header>
+    <section class="desk" aria-label="Игра против компьютера">
+      <div class="game-toolbar">
+        <p id="status" role="status" aria-live="polite">Готовим лист…</p>
+        <div class="tools" role="group" aria-label="Масштаб поля">
+          <button id="zoom-out" type="button" aria-label="Уменьшить поле">−</button>
+          <output id="zoom-value" aria-label="Масштаб">100%</output>
+          <button id="zoom-in" type="button" aria-label="Увеличить поле">+</button>
+          <button id="fit" type="button">Весь лист</button>
+        </div>
+      </div>
+      <p id="notice" class="notice" role="alert" hidden></p>
+      <div id="viewport" class="board-viewport" tabindex="0" aria-label="Лист 43 на 60. Прокрутка или перетаскивание перемещает лист.">
+        <div id="paper" class="paper">
+          <canvas id="board" tabindex="0" role="application" aria-label="Игровое поле. Стрелки выбирают пересечение, Enter ставит точку. На телефоне коснись пересечения."></canvas>
+        </div>
+      </div>
+      <div class="page-footer"><span>43 × 60 пересечений · пустой лист А4</span><span id="move-count">Ходов: 0</span></div>
+    </section>
+    <footer class="instructions">
+      <div><p><b>Красная ручка — твоя.</b> Ставь точки на пересечениях и окружай синие. Компьютер отвечает после твоего хода.</p>
+        <p>Захват — обычная штриховка. Пустой домик ждёт чужую точку. Для точного хода увеличь лист; потяни его, чтобы переместиться.</p>
+        <details><summary>Что уже умеет прототип</summary><p>Обычное окружение, пустые домики, счёт, запрет ходов внутри захваченного участка и сдача. Компьютер пока простой. Вложенность, освобождение точек и сложные касания ещё в работе. При неподдерживаемом окружении ход не засчитывается; партия сохраняется. Досрочное окончание по невозможности отыграться пока не подключено.</p></details>
+      </div>
+      <div class="actions"><button id="resign" class="button resign" type="button" disabled>Сдаться</button><button id="new-game" class="button primary" type="button" disabled>Чистый лист</button></div>
+    </footer>
+    <noscript>Чтобы сыграть, включи JavaScript в браузере.</noscript>
+  </main>
+</body>
+</html>
