@@ -56,6 +56,7 @@ body[data-orientation="landscape"] .screen-viewport{inset:auto;left:50%;top:50%;
 .screen-placeholder small{font:700 clamp(9px,.58vw,18px)/1.35 var(--display);letter-spacing:.065em;color:#aaa}
 .device-screen img,.device-screen iframe{position:absolute;inset:0;z-index:2;display:block;width:100%;height:100%;object-fit:cover;border:0}
 .device-screen img{filter:saturate(.95)}
+body[data-theme="neutral"] .device-screen img{object-fit:contain;background:#f3f0e8}
 .device-screen iframe{background:#0a0a0a}
 .activate{position:absolute;bottom:3%;left:5%;right:5%;z-index:4;padding:clamp(10px,.7vw,22px);border:1px solid rgba(255,255,255,.45);background:var(--hot);color:#fff;text-transform:uppercase;letter-spacing:.055em;font:900 clamp(11px,.78vw,25px) var(--display);display:flex;justify-content:space-between;gap:8px;box-shadow:0 6px 15px rgba(0,0,0,.3)}
 .activate:hover{background:#171717}

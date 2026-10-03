@@ -141,6 +141,8 @@ function show(slug, mode, announce = true) {
   $('#case-status').textContent = work.status;
   $('#screen-placeholder-category').textContent = work.category;
   $('#screen-placeholder-title').textContent = work.displayTitle;
+  $('#screen-placeholder-caption').textContent = work.liveUrl ? 'Инструмент доступен по ссылке' : 'Материалы проекта · статус указан в карточке';
+  $('.stage-mark-bottom').textContent = work.liveUrl ? 'МОДЕЛЬ / ВРЕМЕННЫЙ КОРПУС · ЭКРАН / ИНСТРУМЕНТ' : 'МОДЕЛЬ / ВРЕМЕННЫЙ КОРПУС · ЭКРАН / МАТЕРИАЛЫ ПРОЕКТА';
   $('#activate-label').textContent = work.embedAllowed ? 'Открыть живой экран' : 'Открыть в новой вкладке';
   const i = state.works.findIndex(w => w.slug === work.slug) + 1;
   $('#case-number').textContent = String(i).padStart(2, '0');

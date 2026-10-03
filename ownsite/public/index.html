@@ -42,10 +42,10 @@
                     <div class="screen-placeholder" id="screen-placeholder" aria-hidden="true">
                       <span id="screen-placeholder-category">{{CATEGORY}}</span>
                       <strong id="screen-placeholder-title">{{DISPLAY_TITLE}}</strong>
-                      <small>Публичный экран открыт по проверенной ссылке</small>
+                      <small id="screen-placeholder-caption">{{SCREEN_CAPTION}}</small>
                     </div>
                     <img id="screen-poster" src="{{POSTER}}" alt="Кадр работы {{TITLE}}" {{POSTER_HIDDEN}}>
-                    <button class="activate" id="activate-screen" type="button"><span id="activate-label">{{ACTIVATE_LABEL}}</span><span aria-hidden="true">↗</span></button>
+                    <button class="activate" id="activate-screen" type="button" {{ACTIVATE_HIDDEN}}><span id="activate-label">{{ACTIVATE_LABEL}}</span><span aria-hidden="true">↗</span></button>
                   </div>
                 </div>
                 <span class="camera" aria-hidden="true"></span>
@@ -60,7 +60,7 @@
             <button type="button" data-rotate="right" aria-label="Повернуть вправо">→</button>
             <button type="button" data-rotate="reset" aria-label="Сбросить поворот">↺</button>
           </div>
-          <span class="stage-mark stage-mark-bottom">МОДЕЛЬ / ВРЕМЕННЫЙ КОРПУС · ЭКРАН / ДЕЙСТВУЮЩИЙ ИНСТРУМЕНТ</span>
+          <span class="stage-mark stage-mark-bottom">{{STAGE_CAPTION}}</span>
         </div>
 
         <div class="case-panel" id="case-panel">
