@@ -14,7 +14,7 @@ const sharedAssets = new Set(['/assets/torn-paper.jpg', '/assets/tear.webp']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
-  '/tochki/worker.js', '/tochki/core.js', '/tochki/capture.js',
+  '/tochki/worker.js', '/tochki/core.js', '/tochki/bot.js', '/tochki/capture.js',
   '/tochki/assets/background-desktop.png', '/tochki/assets/background-mobile.png',
   '/tochki/assets/board-paper.png', '/tochki/assets/captured-zone-red.png',
   '/tochki/assets/captured-zone-blue.png',

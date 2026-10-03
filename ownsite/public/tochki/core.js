@@ -1,4 +1,5 @@
 import { CapturePending, isClosedPoint, resolveCaptures } from './capture.js';
+import { planComputerMove } from './bot.js';
 // Prototype stage 2: ordinary captures and houses. D-06 diagnostics are
 // explicit errors; this is not yet a complete implementation of all positions.
 export const WIDTH = 43;
@@ -59,7 +60,7 @@ export function playMove(game, side, x, y, options = {}) {
 
 // A deterministic, reproducible baseline opponent. This is a legal-move
 // selector, not the eventual strategic difficulty setting.
-export function chooseComputerMove(game) {
+export function chooseBaselineComputerMove(game) {
   if (game.phase !== 'playing' || game.turn !== 'computer') return null;
   const human = game.moves.filter(move => move.side === 'human');
   let best = null;
@@ -78,6 +79,16 @@ export function chooseComputerMove(game) {
     }
   }
   return best && { x: best.x, y: best.y };
+}
+
+// Strategy changes only move choice; all simulated and real actions use this
+// same transactional rules engine. No circular module import is needed.
+export function analyzeComputerMove(game, options = {}) {
+  return planComputerMove(game, { legalMove, playMove }, options);
+}
+
+export function chooseComputerMove(game) {
+  return analyzeComputerMove(game).move;
 }
 
 export function playHumanTurn(game, x, y) {

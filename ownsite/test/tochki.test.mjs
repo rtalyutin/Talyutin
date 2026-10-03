@@ -14,7 +14,7 @@ test('Tochki serves complete runtime independently of portfolio DB and blocks pr
     const html = await fetch(origin + '/tochki/');
     assert.equal(html.status, 200); assert.match(html.headers.get('content-type'), /text\/html/);
     assert.match(await html.text(), /id="board"/);
-    for (const file of ['app.js', 'worker.js', 'core.js', 'capture.js']) {
+    for (const file of ['app.js', 'worker.js', 'core.js', 'bot.js', 'capture.js']) {
       const response = await fetch(origin + '/tochki/' + file);
       assert.equal(response.status, 200, file); assert.match(response.headers.get('content-type'), /text\/javascript/);
       assert.equal(await response.text(), readFileSync(new URL('../public/tochki/' + file, import.meta.url), 'utf8'));
@@ -26,7 +26,7 @@ test('Tochki serves complete runtime independently of portfolio DB and blocks pr
       assert.equal(response.status, 200, file); assert.match(response.headers.get('content-type'), /image\/png/);
       assert.deepEqual(Buffer.from(await response.arrayBuffer()), readFileSync(new URL('../public/tochki/assets/' + file, import.meta.url)));
     }
-    for (const path of ['/tochki/core.test.js', '/tochki/package.json', '/tochki/README.md', '/tochki/assets/unknown.png', '/tochki/assets/packed-assets.json', '/tochki/assets/board-paper.part-000.b64', '/tochki/%2e%2e/server.mjs']) {
+    for (const path of ['/tochki/core.test.js', '/tochki/bot.test.js', '/tochki/package.json', '/tochki/README.md', '/tochki/assets/unknown.png', '/tochki/assets/packed-assets.json', '/tochki/assets/board-paper.part-000.b64', '/tochki/%2e%2e/server.mjs']) {
       assert.equal((await fetch(origin + path)).status, 404, path);
     }
     assert.equal((await fetch(origin + '/tochki/', { method: 'POST' })).status, 405);
