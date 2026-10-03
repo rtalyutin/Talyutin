@@ -3,7 +3,7 @@ import { createMotion } from './motion.js';
 
 const $ = selector => document.querySelector(selector);
 const motion = createMotion();
-const state = { works: [], selected: null, mode: 'view', rx: -5, ry: -15 };
+const state = { works: [], selected: null, mode: 'view', rx: -5, ry: -15, screen: null };
 const device = $('#device');
 const screen = $('#device-screen');
 const viewport = $('#screen-viewport');
@@ -24,12 +24,17 @@ function address(slug, mode, replace = false) {
 }
 
 function updateRotation() {
+  const rear = Math.cos(state.rx * Math.PI / 180) * Math.cos(state.ry * Math.PI / 180) <= 0;
+  device.dataset.side = rear ? 'rear' : 'front';
+  device.querySelector('.front').inert = rear;
   device.style.setProperty('--rx', `${state.rx}deg`);
   device.style.setProperty('--ry', `${state.ry}deg`);
   document.dispatchEvent(new CustomEvent('phone-pose'));
 }
 
+let posterRequest = 0;
 function clearScreen() {
+  posterRequest++;
   screen.querySelector('iframe')?.remove();
   poster.hidden = true;
   placeholder.hidden = false;
@@ -37,25 +42,26 @@ function clearScreen() {
 }
 
 function setPoster(work) {
+  const request = ++posterRequest;
   poster.hidden = true;
+  placeholder.hidden = false;
   poster.alt = `Кадр работы ${work.title}`;
-  poster.onload = () => {
-    if (poster.naturalWidth && !screen.querySelector('iframe')) {
+  poster.removeAttribute('src');
+  if (!work.poster) return;
+  const preview = new Image();
+  preview.onload = () => {
+    if (request !== posterRequest) return;
+    poster.src = work.poster;
+    if (!screen.querySelector('iframe')) {
       poster.hidden = false;
       placeholder.hidden = true;
     }
   };
-  poster.onerror = () => { poster.hidden = true; placeholder.hidden = false; };
-  if (work.poster) {
-    poster.src = work.poster;
-    if (poster.complete && poster.naturalWidth && !screen.querySelector('iframe')) {
-      poster.hidden = false;
-      placeholder.hidden = true;
-    }
-  } else {
-    poster.removeAttribute('src');
-    placeholder.hidden = false;
-  }
+  preview.onerror = () => {
+    if (request !== posterRequest) return;
+    poster.hidden = true; placeholder.hidden = false;
+  };
+  preview.src = work.poster;
 }
 
 function renderWorkLinks(work) {
@@ -114,11 +120,49 @@ function renderSwitcher() {
   motion.watch();
 }
 
+const headingCanvas = document.createElement('canvas');
+const headingContext = headingCanvas.getContext('2d');
+function fitHeadings() {
+  for (const selector of ['#manifesto', '#case-title', '#screen-placeholder-title']) {
+    const element = $(selector);
+    if (!element?.clientWidth || !headingContext) continue;
+    element.style.removeProperty('font-size');
+    const style = getComputedStyle(element);
+    const size = parseFloat(style.fontSize);
+    const spacing = parseFloat(style.letterSpacing) || 0;
+    headingContext.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    const text = [...element.childNodes].map(node => node.nodeName === 'BR' ? ' ' : node.textContent).join('');
+    const renderedText = style.textTransform === 'uppercase' ? text.toLocaleUpperCase('ru') : style.textTransform === 'lowercase' ? text.toLocaleLowerCase('ru') : text;
+    const words = renderedText.trim().split(/\s+/u);
+    const widest = Math.max(...words.map(word => headingContext.measureText(word).width + Math.max(0, word.length - 1) * spacing));
+    if (widest > element.clientWidth) {
+      element.style.fontSize = `${size * (element.clientWidth - 2) / widest}px`;
+    }
+  }
+}
+addEventListener('resize', fitHeadings);
+document.fonts?.ready.then(fitHeadings);
+const headingWidths = new WeakMap();
+const headingResize = new ResizeObserver(entries => {
+  let changed = false;
+  for (const entry of entries) {
+    if (headingWidths.get(entry.target) !== entry.contentRect.width) {
+      headingWidths.set(entry.target, entry.contentRect.width); changed = true;
+    }
+  }
+  if (changed) fitHeadings();
+});
+for (const selector of ['.manifesto', '.case-panel', '#screen-viewport']) headingResize.observe($(selector));
+
 function show(slug, mode, announce = true) {
   const work = state.works.find(w => w.slug === slug) ?? state.works[0];
   if (!work) return;
   const changed = state.selected !== work.slug;
   const modeChanged = state.mode !== mode;
+  const previous = state.screen;
+  const liveChanged = changed || previous?.liveUrl !== (work.liveUrl || '') || previous?.embedAllowed !== !!work.embedAllowed;
+  const posterChanged = changed || previous?.poster !== (work.poster || '');
+  state.screen = { liveUrl: work.liveUrl || '', embedAllowed: !!work.embedAllowed, poster: work.poster || '' };
   state.selected = work.slug;
   state.mode = mode;
   document.body.dataset.theme = work.theme;
@@ -159,9 +203,13 @@ function show(slug, mode, announce = true) {
   }
   renderWorkLinks(work);
   document.title = `Роман Талютин — ${work.title} / Работы в действии`;
+  if (liveChanged) clearScreen();
+  if (liveChanged || posterChanged) setPoster(work);
+  poster.alt = `Кадр работы ${work.title}`;
+  const liveFrame = screen.querySelector('iframe');
+  if (liveFrame) liveFrame.title = `Действующий инструмент: ${work.title}, ${work.category}`;
+  fitHeadings();
   if (changed) {
-    clearScreen();
-    setPoster(work);
     state.rx = -5;
     state.ry = work.orientation === 'landscape' ? -10 : -15;
     updateRotation();
@@ -171,11 +219,14 @@ function show(slug, mode, announce = true) {
   if (announce) $('#case-announcement').textContent = `${work.category}: ${work.title}. Режим: ${mode === 'reveal' ? 'разбор решения' : 'просмотр'}.`;
 }
 
+let refreshRequest = 0;
 async function refresh(preferURL = false) {
+  const request = ++refreshRequest;
   try {
     const response = await fetch('/api/works', { cache: 'no-store' });
     if (!response.ok) throw new Error('Portfolio unavailable');
     const next = await response.json();
+    if (request !== refreshRequest) return;
     if (!Array.isArray(next)) throw new Error('Bad portfolio response');
     const oldSlug = state.selected;
     const focused = document.activeElement?.closest('a[data-work]');
@@ -187,6 +238,9 @@ async function refresh(preferURL = false) {
     const slug = preferURL ? fromURL.slug : oldSlug || fromURL.slug;
     const chosen = next.find(w => w.slug === slug) ?? next[0];
     if (!chosen) {
+      clearScreen();
+      state.selected = null; state.screen = null;
+      activate.hidden = true;
       $('#case-panel').hidden = true;
       $('.stage').hidden = true;
       return;
@@ -202,6 +256,7 @@ async function refresh(preferURL = false) {
     }
     if (fromURL.slug && !next.some(w => w.slug === fromURL.slug)) address(chosen.slug, state.mode, true);
   } catch (error) {
+    if (request !== refreshRequest) return;
     console.error('Не удалось обновить витрину', error);
   }
 }
@@ -267,7 +322,7 @@ activate.addEventListener('click', () => {
 
 document.querySelectorAll('[data-rotate]').forEach(button => button.addEventListener('click', () => {
   if (button.dataset.rotate === 'reset') { state.rx = -5; state.ry = document.body.dataset.orientation === 'landscape' ? -10 : -15; }
-  else state.ry = Math.max(-75, Math.min(75, state.ry + (button.dataset.rotate === 'left' ? -15 : 15)));
+  else state.ry += button.dataset.rotate === 'left' ? -15 : 15;
   updateRotation();
 }));
 
@@ -280,7 +335,7 @@ grip.addEventListener('pointerdown', event => {
 });
 grip.addEventListener('pointermove', event => {
   if (!pointer) return;
-  state.ry = Math.max(-75, Math.min(75, pointer.ry + (event.clientX - pointer.x) * .35));
+  state.ry = pointer.ry + (event.clientX - pointer.x) * .35;
   state.rx = Math.max(-35, Math.min(35, pointer.rx - (event.clientY - pointer.y) * .28));
   updateRotation();
 });

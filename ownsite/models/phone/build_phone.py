@@ -4,6 +4,11 @@ from pathlib import Path
 from mathutils import Vector, Quaternion
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'public'/'assets';OUT.mkdir(parents=True,exist_ok=True)
+# Regenerate only our authored scene; leave other Blender scenes untouched.
+previous=bpy.data.scenes.get('RT Phone / studio')
+if previous:
+    for obj in list(previous.objects):bpy.data.objects.remove(obj,do_unlink=True)
+    bpy.data.scenes.remove(previous)
 scene=bpy.data.scenes.new('RT Phone / studio');bpy.context.window.scene=scene
 collection=bpy.data.collections.new('RT Phone / export');scene.collection.children.link(collection)
 def material(name,color,metal=0,rough=.4):
@@ -47,7 +52,7 @@ def disc(name,radius,depth,mat,location):
     obj=link(bpy.data.objects.new(name,mesh),mat);obj.location=location
     for p in mesh.polygons:p.use_smooth=len(p.vertices)==4
     return obj
-rounded('Chassis',3.6,7.5,.36,.48,metal,bevel=.065)
+chassis=rounded('Chassis',3.6,7.5,.36,.48,metal,bevel=.065)
 rounded('Front chamfer',3.56,7.46,.044,.46,rim,(0,0,.174),.012)
 rounded('Front glass',3.51,7.41,.026,.435,glass,(0,0,.201),.008)
 rounded('Screen',3.33,7.15,.012,.28,black,(0,0,.222),.003)
@@ -60,17 +65,32 @@ for i,(x,y) in enumerate([(-1.13,3.03),(-1.13,2.25),(-.39,2.63)],1):
     disc(f'Camera {i} pupil',.102,.008,black,(x,y,-.407))
 disc('Rear flash',.112,.025,flash,(-.38,3.18,-.323))
 disc('Depth sensor',.063,.025,black,(-.38,2.10,-.323))
-rounded('Earpiece',.50,.035,.018,.017,black,(0,3.586,.225),.003)
-disc('Front camera ring',.069,.013,rim,(.37,3.582,.229))
-disc('Front camera lens',.047,.015,lens,(.37,3.582,.24))
+# All front hardware fits in the bezel, clear of the HTML screen ymax 3.575.
+rounded('Earpiece',.50,.035,.018,.017,black,(0,3.643,.225),.003)
+disc('Front camera ring',.043,.013,rim,(.37,3.645,.229))
+disc('Front camera lens',.030,.015,lens,(.37,3.645,.24))
 for name,x,y,h in [('Power key',1.805,.92,.69),('Volume up',-1.805,1.54,.48),('Volume down',-1.805,.91,.48),('Action key',-1.805,2.29,.27)]:
     o=rounded(name,.12,h,.058,.055,rim,(x,y,0),.015);o.rotation_euler[1]=math.pi/2
 for x in [-1.803,1.803]:
     for y in [-2.82,2.95]:
         o=rounded('Antenna break',.32,.043,.012,.018,black,(x,y,0),.009);o.rotation_euler[1]=math.pi/2
-o=rounded('USB C recessed port',.43,.12,.018,.055,black,(0,-3.752,0),.004);o.rotation_euler[0]=math.pi/2
+# Real pockets in the aluminium, with dark inner backs rather than surface stickers.
+def recess(cutter):
+    if 'BOOLEAN' not in [item.identifier for item in bpy.types.Modifier.bl_rna.properties['type'].enum_items]:
+        raise RuntimeError('Boolean modifier unavailable')
+    mod=chassis.modifiers.new('Machined recess','BOOLEAN');mod.object=cutter
+    for prop,value in [('operation','DIFFERENCE'),('solver','EXACT')]:
+        valid=[item.identifier for item in mod.bl_rna.properties[prop].enum_items]
+        if value not in valid:raise RuntimeError(f'{prop} {value} unavailable')
+        setattr(mod,prop,value)
+    bpy.context.view_layer.objects.active=chassis;chassis.select_set(True)
+    bpy.ops.object.modifier_apply(modifier=mod.name)
+    bpy.data.objects.remove(cutter,do_unlink=True)
+cut=rounded('USB cutter',.43,.12,.25,.055,black,(0,-3.725,0),.003);cut.rotation_euler[0]=math.pi/2;recess(cut)
+o=rounded('USB C recessed port',.40,.10,.012,.045,black,(0,-3.61,0),.003);o.rotation_euler[0]=math.pi/2
 for x in [-1.18,-1.00,-.82,-.64,.64,.82,1.00,1.18]:
-    o=disc('Speaker aperture',.032,.018,black,(x,-3.753,0));o.rotation_euler[0]=math.pi/2
+    cut=disc('Speaker cutter',.032,.16,black,(x,-3.74,0));cut.rotation_euler[0]=math.pi/2;recess(cut)
+    o=disc('Speaker aperture',.028,.012,black,(x,-3.67,0));o.rotation_euler[0]=math.pi/2
 o=rounded('SIM tray seam',.16,.70,.009,.008,black,(1.802,-1.58,0),.004);o.rotation_euler[1]=math.pi/2
 # Pre-rotate for Blender Z-up -> glTF Y-up conversion. Browser front is +Z.
 for obj in collection.objects:

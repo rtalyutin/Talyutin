@@ -6,7 +6,7 @@ No downloaded models, external textures, logos or font dependencies.
 - Editable scene: `rt-phone.blend`.
 - Reproducible source: `build_phone.py`. Run from a fresh Blender file:
   `p = "/absolute/path/build_phone.py"; exec(compile(open(p).read(), p, "exec"), {"__file__": p})`.
-- Browser asset: `../../public/assets/rt-phone.glb`, about 304 KiB.
+- Browser asset: `../../public/assets/rt-phone.glb`, about 362 KiB.
 - Export only the active scene's selected phone objects. Studio lights/camera and the default cube are excluded.
 - Coordinates in GLB: X right, Y up, front +Z. Body 3.6 × 7.5 × 0.36.
   Root `RT_Phone` extras define the HTML screen: 3.33 × 7.15, Z .228, corner radius .28.
@@ -16,6 +16,7 @@ No downloaded models, external textures, logos or font dependencies.
 
 `../../client/phone-viewer.js` uses Three.js GLTFLoader and CSS3DRenderer with one camera
 and one pose. The existing HTML poster/button/iframe stay interactive.
+The phone rotates through a full turn; the HTML front is hidden and inert on the rear without removing the iframe. USB-C and speaker openings are real chassis recesses. Front camera and earpiece sit entirely outside the screen area.
 Portrait and landscape use the original case orientation. The content counter-rotates
 in landscape. Existing drag, arrows, reset, mobile links and reduced motion are preserved.
 

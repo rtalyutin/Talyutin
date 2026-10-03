@@ -219,3 +219,26 @@ body[data-orientation='portrait'] .device{--scale:.85}
 }
 html[data-reduced-motion] .paper-ticket,html[data-reduced-motion] .paper-ticket .ticket-art,html[data-reduced-motion] .paper-ticket .ticket-tab,html[data-reduced-motion] .approach-route .arrow,html[data-reduced-motion] .contact-ticket,html[data-reduced-motion] .contact-ticket .arrow,html[data-reduced-motion] .site-footer .arrow{transition:none!important;transform:none!important}
 @media(prefers-reduced-motion:reduce){.paper-ticket,.paper-ticket .ticket-art,.paper-ticket .ticket-tab,.approach-route .arrow,.contact-ticket,.contact-ticket .arrow,.site-footer .arrow{transition:none!important;transform:none!important}}
+
+/* Keep text on paper; reserve the dark tear for the device on narrow layouts. */
+.manifesto h1{max-width:none}
+.screen-placeholder strong,.case-view h2,.case-reveal h2{overflow-wrap:normal;word-break:normal;hyphens:manual}
+.device[data-side='rear'] .front{visibility:hidden;pointer-events:none}
+.device-grip{backface-visibility:visible}
+@media(max-width:1100px){
+  .scene-texture{display:none}
+  .stage::before{content:"";position:absolute;inset:0;z-index:-1;background:url('/assets/torn-paper.jpg') 57% center/cover no-repeat}
+  body[data-theme='arena'] .stage::before{filter:hue-rotate(180deg) saturate(.55)}
+  .manifesto h1{font-size:clamp(36px,4.5vw,50px);max-width:none}
+}
+@media(max-width:820px){
+  .stage::before{inset:0 -18px;background-position:61% center;background-size:auto 100%}
+  .manifesto h1{font-size:clamp(33px,10.4vw,73px)}
+}
+
+/* The independent grip stays usable on both sides without intercepting the screen. */
+.face{pointer-events:none}
+.front{z-index:2}
+.device-screen{pointer-events:auto}
+
+@media(min-width:1101px){.manifesto h1{max-width:calc(100% - 24px)}}

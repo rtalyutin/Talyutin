@@ -61,9 +61,9 @@ function pendingApp() {
   const element = () => ({ addEventListener: noop, dataset: {}, classList: { add: noop, remove: noop }, style: { setProperty: noop } });
   const elements = new Map(['#device', '#device-screen', '#screen-viewport', '#screen-poster', '#screen-placeholder', '#activate-screen', '#device-grip'].map(id => [id, element()]));
   let settle;
-  const document = { querySelector: selector => elements.get(selector), querySelectorAll: () => [], addEventListener: (name, fn) => handlers.set(name, fn) };
+  const document = { createElement: () => ({ getContext: () => null }), querySelector: selector => elements.get(selector), querySelectorAll: () => [], addEventListener: (name, fn) => handlers.set(name, fn) };
   const createMotion = () => ({ feedback: noop, watch: noop, openTicket: () => effects.push('open'), showCase: noop, chooseRoute: noop, destroy: noop, sync: noop });
-  const context = vm.createContext({ document, createMotion, renderCatalogue: () => '', URL, URLSearchParams,
+  const context = vm.createContext({ ResizeObserver: class { observe() {} }, document, createMotion, renderCatalogue: () => '', URL, URLSearchParams,
     console: { error: noop, warn: noop }, fetch: () => new Promise(resolve => { settle = resolve; }), addEventListener: noop,
     location: { search: '?work=dashboard', href: 'http://localhost/?work=dashboard' },
     history: { pushState: () => effects.push('history'), replaceState: () => effects.push('history') },

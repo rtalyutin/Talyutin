@@ -1,38 +1,36 @@
-# Phone acceptance — 2026-10-03
+# Phone acceptance — 2026-10-03, corrections
 
-Scope: a Blender phone asset integrated into the existing portfolio in `ownsite`.
-Authorization: the user's request to build the phone in Blender and upload it to
-`rtalyutin/Talyutin`. The existing HTML screen, case data and external actions are preserved.
+Scope: correct the audited Blender phone, screen refresh, full rotation and hero text layout in `ownsite`.
+Authorization: the user's request to build/upload the phone in Blender, followed by the instruction to fix the audited defects.
 
-Base: `13df38160deb45b3781167b2131983f61738765a` (including concurrent project captions).
-Blender: 5.2.1 LTS. GLB SHA-256:
-`1b5687caf3f87310526a1e0a352cf0454e7df694f7a641e6b675a6f6c26b5de1`.
-The editable blend and generator are included. GLB: 310,896 bytes.
-Browser bundle: 577,828 bytes, self-hosted; Three.js 0.180.0, MIT license included.
+Integrated base: `1fba391b7bc611296783f985db9a0cd55639ba13`.
+Concurrent paper sections, shared catalogue renderer, accessible navigation and motion are preserved.
+The local preview exposes nine seeded cases in an in-memory database only; publication flags in production are not modified.
+
+Blender: 5.2.1 LTS. Editable blend and reproducible generator included.
+GLB: 370,240 bytes, 41 mesh nodes, root `RT_Phone` and separate `Screen`.
+GLB SHA-256: `7e4e6a663cd6f69146413c3bb509b4ad91262f6be1af033fedbc61ae28c0ddb1`.
+Committed self-hosted browser bundle: 577,992 bytes, Three.js 0.180.0, MIT license included.
+Bundle SHA-256: `8d130eb4aadc5a21c64753244a60f45da42e62b84c5f6269c31274905d4b1f47`.
 
 | Check | Actual result |
 | --- | --- |
-| Blender studio front/rear renders | Inspected; phone body, glass, buttons, camera cluster visible |
-| Independent Three GLTFLoader + Box3 check | 41 meshes; body 3.6 × 7.5; screen 3.33 × 7.15, front Z .228; no exported cube/lights/camera |
-| Desktop landscape, real browser | Model status ready; screen aligned with body; rotation controls work |
-| Live YCS screen | iframe loaded; the site's menu was opened inside the phone |
-| Mobile 390 × 844 | No horizontal document overflow; phone and controls visible |
-| Mobile live-screen click | CDP Page.windowOpen: correct YCS URL, userGesture true, target _blank; no embedded iframe |
-| Portrait desktop | Synthetic orientation fixture in an in-memory local DB; no screen-button/arrow overlap after sizing correction |
-| GLB load failure | Request blocked locally; CSS fallback shown and live-screen button available; block removed |
-| WebGL context loss | Actual WEBGL_lose_context extension; CSS body and rotation continue to work |
-| iframe state protection | Independent source review: no DOM reparenting on context loss; pre-opened iframe keeps CSS fallback during model load |
-| Regression suite | node --test: 24 pass, 0 fail, 1 skip |
-| Skipped test | Cross-repository PostgreSQL/Tg-mcp integration requires TG_MCP_DIRECTORY; not covered by this asset change |
-| Diff whitespace | git diff --check passed |
+| Blender model | Camera and earpiece moved outside screen; exact Boolean recesses for USB-C and eight speaker holes; inspected in Blender |
+| Independent Three GLTFLoader geometry | Screen Y max 3.575; front camera ring Y min 3.602, gap 0.027; lens and earpiece also clear |
+| Independent raycast of recesses | USB back Y -3.616; speaker back Y -3.676; control chassis surface Y -3.750 |
+| Heading fit | Nine cases at 320, 390, 1024 and 1440 px; no heading or document horizontal overflow in 36 checks after integration |
+| Readability | Tablet/mobile text sits on light paper; dark tear is confined to phone stage; screenshots inspected |
+| Real browser rotation | Rear visible, front hidden and inert; rear grip drag changes pose; reset restores front |
+| Real browser live screen | YCS loaded; menu opened inside iframe; menu remained open after rear rotation and reset |
+| CSS fallback | Model request blocked locally; activation and iframe menu clicks worked; temporary block removed |
+| Shared catalogue integration | Paper card selects correct case/reveal mode, portrait orientation and selected ticket; original motion retained |
+| Screen regression tests | Nine scenarios execute real app functions and current registry/motion: metadata, poster, URL, embedding revocation, no-live, stale images, empty catalogue, stale response, full turn |
+| Full regression suite | `node --test`: 43 pass, 0 fail, 1 skip |
+| Skipped test | Cross-repository PostgreSQL/Tg-mcp integration needs `TG_MCP_DIRECTORY`; unavailable in this checkout |
+| Diff whitespace | `git diff --check` passed |
 
-The existing Tochki test fixture expected unpacked PNGs missing from a clean checkout.
-Its assertion now compares served original bytes with the recorded original size/SHA-256
-from the existing packed-asset manifest. No game code or game assets were changed.
+Screen state is tracked separately from catalogue records. URL or embed-policy changes revoke the old iframe; metadata/poster-only changes preserve it. Empty catalogues clear the live screen. Request generations discard stale image and API responses.
 
-Server changes are limited to global GLB/viewer allowlisted paths, GLB MIME and a
-cross-platform static-file containment check. Published/hidden poster authorization stays intact.
-The Dockerfile already copies `public`, so the committed bundle and GLB ship with the existing image.
+The HTML screen remains interactive in WebGL and CSS modes. Same-camera projection and screen metrics remain unchanged. Existing server allowlists and published/hidden poster authorization are preserved. The Dockerfile already copies the bundle and model.
 
-This report confirms local acceptance. Git upload and production deployment require their
-own readback; a local render or test pass is not evidence of a deployed site.
+This file records local acceptance. GitHub tree/ref readback and production byte/render checks are separate evidence; they are performed after publication.

@@ -83,6 +83,7 @@ export async function mountPhone({ device, space, getPose }) {
   function resize() {
     if (!active) return;
     const width = device.offsetWidth;
+    if (!width || !space.clientWidth || !space.clientHeight) return;
     pixelsPerUnit = width / metrics.width;
     const height = width * metrics.height / metrics.width;
     device.style.setProperty('--dh', height + 'px');
@@ -113,6 +114,10 @@ export async function mountPhone({ device, space, getPose }) {
     body.scale.setScalar(pixelsPerUnit * userScale);
     screenObject.quaternion.copy(body.quaternion);
     screenObject.scale.setScalar(userScale);
+    const q = body.quaternion;
+    const rear = 1 - 2 * (q.x * q.x + q.y * q.y) <= 0;
+    device.dataset.side = rear ? 'rear' : 'front';
+    device.querySelector('.front').inert = rear;
     if (webglAvailable) renderer.render(scene, camera);
     cssRenderer.render(cssScene, camera);
     if (body.quaternion.angleTo(target) > .0005) requestRender();
