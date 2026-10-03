@@ -98,28 +98,32 @@
     </section>
 
     <section class="works-section" id="works" aria-labelledby="works-title">
-      <div class="section-heading"><span>РЕЕСТР / 01</span><h2 id="works-title">Всё, что можно открыть</h2><p>Здесь появляются только работы, допущенные к показу. Вещи в разработке не маскируются под готовые продукты.</p></div>
-      <div class="work-list" id="work-list">{{CATALOGUE}}</div>
+      <div class="section-heading registry-heading" data-reveal><span>РЕЕСТР / 01</span><h2 id="works-title">Всё, что<br>можно открыть</h2><p>Выберите работу, чтобы<br class="desktop-break"> увидеть решение.</p></div>
+      <div class="work-list" id="work-list" data-reveal>{{CATALOGUE}}</div>
     </section>
 
     <section class="approach-section" aria-labelledby="approach-title">
-      <div class="section-heading"><span>ПРОЦЕСС / 02</span><h2 id="approach-title">Две точки входа</h2></div>
+      <div class="approach-paper" aria-hidden="true"></div>
+      <div class="section-heading" data-reveal><span>ПРОЦЕСС / 02</span><h2 id="approach-title">Две точки входа</h2></div>
       <div class="approach-grid">
-        <article><span>01 / ЕСТЬ ЗАДАЧА</span><h3>Нужно сделать</h3><p>Покажите результат, который должен заработать, и то, что уже есть. Я помогу определить состав, срок и стоимость после разбора задачи.</p></article>
-        <article><span>02 / МНОГО НЕИЗВЕСТНОГО</span><h3>Нужно понять</h3><p>Начнём с ситуации и самого рискованного вопроса. Первая проверка может привести к разработке, уточнению или решению не строить лишнего.</p></article>
+        <article class="approach-route" data-reveal><span><b>01 /</b> ЕСТЬ ЗАДАЧА</span><h3>Нужно<br>сделать</h3><p>Покажите результат, который должен заработать, и то, что уже есть. Я помогу определить состав, срок и стоимость после разбора задачи.</p><a class="route-link route-link-clear" href="#contact" data-route="clear">У меня понятная задача <span class="arrow" aria-hidden="true">↗</span></a></article>
+        <article class="approach-route" data-reveal><span><b>02 /</b> МНОГО НЕИЗВЕСТНОГО</span><h3>Нужно<br>понять</h3><p>Начнём с ситуации и самого рискованного вопроса. Первая проверка может привести к разработке, уточнению или решению <span class="ink-underline">не строить лишнего.</span></p><a class="route-link" href="#contact" data-route="uncertain">Нужно разобраться, что делать <span class="arrow" aria-hidden="true">↗</span></a></article>
       </div>
     </section>
 
     <section class="contact-section" id="contact" aria-labelledby="contact-title">
-      <span>СВЯЗЬ / 03</span>
-      <h2 id="contact-title">Задача может быть<br>не до конца ясной.</h2>
-      <p>Обсудим её в переписке или по телефону. Сайт не собирает ваши контакты и не сохраняет сообщения.</p>
+      <div class="contact-seam" aria-hidden="true"></div>
+      <div class="contact-heading" data-reveal>
+        <span class="contact-eyebrow">СВЯЗЬ / 03</span>
+        <h2 id="contact-title"><span>Задача может быть</span><br><span class="ink-underline">не до конца ясной.</span></h2>
+        <p>Обсудим её в переписке или по телефону. Сайт не собирает ваши контакты и не сохраняет сообщения.</p>
+      </div>
       <p class="contact-intent" id="contact-intent" aria-live="polite" hidden></p>
-      <div class="contact-outlets" id="contact-outlets">
+      <div class="contact-outlets" id="contact-outlets" data-reveal>
         {{CONTACT_OUTLETS}}
       </div>
     </section>
   </main>
-  <footer class="site-footer"><span>РОМАН ТАЛЮТИН / 2026</span><a href="#manifesto">Наверх ↑</a></footer>
+  <footer class="site-footer"><span>РОМАН ТАЛЮТИН / 2026</span><a href="#manifesto">Наверх <span class="arrow" aria-hidden="true">↑</span></a></footer>
 </body>
 </html>

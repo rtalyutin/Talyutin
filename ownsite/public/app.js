@@ -1,4 +1,8 @@
+import { renderCatalogue } from './registry.js';
+import { createMotion } from './motion.js';
+
 const $ = selector => document.querySelector(selector);
+const motion = createMotion();
 const state = { works: [], selected: null, mode: 'view', rx: -5, ry: -15 };
 const device = $('#device');
 const screen = $('#device-screen');
@@ -90,7 +94,7 @@ function renderSwitcher() {
   const list = $('#case-list');
   const catalogue = $('#work-list');
   list.replaceChildren();
-  catalogue.replaceChildren();
+  catalogue.innerHTML = renderCatalogue(state.works, state.selected);
   state.works.forEach((work, i) => {
     const li = document.createElement('li');
     const a = document.createElement('a');
@@ -106,28 +110,15 @@ function renderSwitcher() {
     li.append(a);
     list.append(li);
 
-    const article = document.createElement('article');
-    article.className = 'work-row';
-    const kind = document.createElement('span');
-    kind.textContent = work.category;
-    const h3 = document.createElement('h3');
-    h3.textContent = work.title;
-    const summary = document.createElement('p');
-    summary.textContent = work.summary;
-    const link = document.createElement('a');
-    link.href = `/?work=${encodeURIComponent(work.slug)}&mode=reveal`;
-    link.dataset.work = work.slug;
-    link.dataset.targetMode = 'reveal';
-    link.textContent = 'Раскрыть работу ↗';
-    article.append(kind, h3, summary, link);
-    catalogue.append(article);
   });
+  motion.watch();
 }
 
 function show(slug, mode, announce = true) {
   const work = state.works.find(w => w.slug === slug) ?? state.works[0];
   if (!work) return;
   const changed = state.selected !== work.slug;
+  const modeChanged = state.mode !== mode;
   state.selected = work.slug;
   state.mode = mode;
   document.body.dataset.theme = work.theme;
@@ -154,6 +145,13 @@ function show(slug, mode, announce = true) {
     else a.removeAttribute('aria-current');
     a.href = `/?work=${encodeURIComponent(a.dataset.work)}&mode=${mode}`;
   }
+  for (const ticket of document.querySelectorAll('[data-ticket]')) {
+    const selected = ticket.dataset.ticket === work.slug;
+    ticket.classList.toggle('is-selected', selected);
+    const link = ticket.querySelector('a[data-work]');
+    if (selected) link?.setAttribute('aria-current', 'true');
+    else link?.removeAttribute('aria-current');
+  }
   for (const a of document.querySelectorAll('[data-mode-link]')) {
     a.href = `/?work=${encodeURIComponent(work.slug)}&mode=${a.dataset.modeLink}`;
     if (a.dataset.modeLink === mode) a.setAttribute('aria-current', 'true');
@@ -169,6 +167,7 @@ function show(slug, mode, announce = true) {
     updateRotation();
   }
   activate.hidden = !work.liveUrl || !!screen.querySelector('iframe');
+  if (announce && (changed || modeChanged)) motion.showCase(mode, modeChanged && mode === 'reveal');
   if (announce) $('#case-announcement').textContent = `${work.category}: ${work.title}. Режим: ${mode === 'reveal' ? 'разбор решения' : 'просмотр'}.`;
 }
 
@@ -179,6 +178,9 @@ async function refresh(preferURL = false) {
     const next = await response.json();
     if (!Array.isArray(next)) throw new Error('Bad portfolio response');
     const oldSlug = state.selected;
+    const focused = document.activeElement?.closest('a[data-work]');
+    const focusList = focused?.closest('#case-list, #work-list')?.id;
+    const focusSlug = focused?.dataset.work;
     state.works = next;
     renderSwitcher();
     const fromURL = desiredState();
@@ -192,6 +194,12 @@ async function refresh(preferURL = false) {
     $('#case-panel').hidden = false;
     $('.stage').hidden = false;
     show(chosen.slug, preferURL ? fromURL.mode : state.mode, false);
+    if (focusList) {
+      const links = document.querySelectorAll(`#${focusList} a[data-work]`);
+      const focusTarget = Array.from(links).find(a => a.dataset.work === focusSlug)
+        ?? Array.from(links).find(a => a.dataset.work === chosen.slug);
+      focusTarget?.focus({ preventScroll: true });
+    }
     if (fromURL.slug && !next.some(w => w.slug === fromURL.slug)) address(chosen.slug, state.mode, true);
   } catch (error) {
     console.error('Не удалось обновить витрину', error);
@@ -199,8 +207,10 @@ async function refresh(preferURL = false) {
 }
 
 document.addEventListener('click', event => {
+  const action = event.target.closest('a, button');
+  if (action) motion.feedback(action);
   const route = event.target.closest('a[data-route]');
-  if (route) {
+  if (route && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) {
     const clear = route.dataset.route === 'clear';
     const context = $('#contact-intent');
     context.textContent = clear
@@ -213,20 +223,23 @@ document.addEventListener('click', event => {
       const subject = clear ? 'Понятная ИТ-задача' : 'Задача с неопределённостью';
       email.href = `${address}?subject=${encodeURIComponent(subject)}`;
     }
+    motion.chooseRoute(route.dataset.route);
   }
   const workLink = event.target.closest('a[data-work]');
-  if (workLink && !event.metaKey && !event.ctrlKey && !event.shiftKey && event.button === 0) {
-    event.preventDefault();
+  if (workLink && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) {
     const slug = workLink.dataset.work;
+    // Keep the SSR link usable before the API arrives or when it fails.
     if (!state.works.some(w => w.slug === slug)) return;
+    event.preventDefault();
     const mode = workLink.dataset.targetMode || state.mode;
+    motion.openTicket(workLink);
     address(slug, mode);
     show(slug, mode);
     if (workLink.closest('#work-list')) scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
     return;
   }
   const modeLink = event.target.closest('[data-mode-link]');
-  if (modeLink && !event.metaKey && !event.ctrlKey && event.button === 0) {
+  if (modeLink && state.selected && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) {
     event.preventDefault();
     const mode = modeLink.dataset.modeLink;
     address(state.selected, mode);
@@ -282,6 +295,10 @@ addEventListener('popstate', () => {
   else refresh(true);
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+addEventListener('pagehide', event => { if (!event.persisted) motion.destroy(); });
+addEventListener('pageshow', event => {
+  if (event.persisted) { motion.sync(); refresh(); }
+});
 refresh(true);
 
 // Load 3D independently: the portfolio and live screen also work without WebGL.

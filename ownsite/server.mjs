@@ -6,10 +6,11 @@ import { openDatabase, publicWorks, publicWork, publicContacts } from './db.mjs'
 import { openPostgres } from './pg-db.mjs';
 import { seedWorks } from './seed-works.mjs';
 import { openRemotePortfolio } from './remote-db.mjs';
+import { renderCatalogue } from './public/registry.js';
 
 const root = resolve(import.meta.dirname, 'public');
 const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.glb': 'model/gltf-binary', '.txt': 'text/plain' };
-const staticFiles = new Set(['/favicon.svg', '/app.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css', '/phone-viewer.js', '/phone-viewer.js.LEGAL.txt']);
+const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/motion.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css', '/phone-viewer.js', '/phone-viewer.js.LEGAL.txt']);
 const sharedAssets = new Set(['/assets/torn-paper.jpg', '/assets/tear.webp', '/assets/rt-phone.glb']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
@@ -71,11 +72,16 @@ async function renderIndex(url, database) {
   const category = chosen?.category ?? 'Портфолио';
   const reveal = chosen?.reveal?.map(part => `<div class="reveal-item"><span>${escapeHtml(part.heading)}</span><p>${escapeHtml(part.body)}</p></div>`).join('') ?? '';
   const entries = works.map((w, i) => `<li><a href="/?work=${encodeURIComponent(w.slug)}&mode=${mode}" data-work="${escapeHtml(w.slug)}" ${w.slug === chosen?.slug ? 'aria-current="true"' : ''}><span>${String(i + 1).padStart(2, '0')}</span><strong>${escapeHtml(w.category)}</strong><small>${escapeHtml(w.title)}</small></a></li>`).join('');
-  const catalogue = works.map(w => `<article class="work-row"><span>${escapeHtml(w.category)}</span><h3>${escapeHtml(w.title)}</h3><p>${escapeHtml(w.summary)}</p><a href="/?work=${encodeURIComponent(w.slug)}&mode=reveal">Раскрыть работу ↗</a></article>`).join('');
+  const catalogue = renderCatalogue(works, chosen?.slug);
   const workLinks = (chosen?.links?.length ? chosen.links : chosen?.liveUrl ? [{ label: 'Открыть действующий инструмент', href: chosen.liveUrl }] : [])
     .map(link => `<a href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)} ↗</a>`).join('');
   const contacts = await getContacts(database);
-  const outlets = contacts.length ? contacts.map(link => `<a href="${escapeHtml(link.href)}" ${link.href.startsWith('https:') ? 'target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(link.label)} ↗</a>`).join('') : '<span class="contact-pending">Публичные адреса для связи будут добавлены в финальную сборку.</span>';
+  const outlets = contacts.length ? contacts.map(link => {
+    const kind = link.href.startsWith('tel:') ? 'phone' : link.href.startsWith('mailto:') ? 'email' : 'external';
+    let value = link.href.replace(/^(tel:|mailto:)/, '').split('?')[0];
+    if (kind === 'phone') value = value.replace(/^\+7(\d{3})(\d{3})(\d{2})(\d{2})$/, '+7 $1 $2-$3-$4');
+    return `<a class="contact-ticket" data-contact="${kind}" href="${escapeHtml(link.href)}" ${link.href.startsWith('https:') ? 'target="_blank" rel="noopener noreferrer"' : ''}><span class="contact-label">${escapeHtml(link.label)} <span class="arrow" aria-hidden="true">↗</span></span><span class="contact-value">${escapeHtml(value)}</span></a>`;
+  }).join('') : '<span class="contact-pending">Публичные адреса для связи будут добавлены в финальную сборку.</span>';
   return readFileSync(join(root, 'index.html'), 'utf8')
     .replaceAll('{{TITLE}}', escapeHtml(title))
     .replaceAll('{{DISPLAY_TITLE}}', escapeHtml(chosen?.displayTitle ?? title))
