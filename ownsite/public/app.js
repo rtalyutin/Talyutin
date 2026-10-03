@@ -22,6 +22,7 @@ function address(slug, mode, replace = false) {
 function updateRotation() {
   device.style.setProperty('--rx', `${state.rx}deg`);
   device.style.setProperty('--ry', `${state.ry}deg`);
+  document.dispatchEvent(new CustomEvent('phone-pose'));
 }
 
 function clearScreen() {
@@ -142,7 +143,7 @@ function show(slug, mode, announce = true) {
   $('#screen-placeholder-category').textContent = work.category;
   $('#screen-placeholder-title').textContent = work.displayTitle;
   $('#screen-placeholder-caption').textContent = work.liveUrl ? 'Инструмент доступен по ссылке' : 'Материалы проекта · статус указан в карточке';
-  $('.stage-mark-bottom').textContent = work.liveUrl ? 'МОДЕЛЬ / ВРЕМЕННЫЙ КОРПУС · ЭКРАН / ИНСТРУМЕНТ' : 'МОДЕЛЬ / ВРЕМЕННЫЙ КОРПУС · ЭКРАН / МАТЕРИАЛЫ ПРОЕКТА';
+  $('.stage-mark-bottom').textContent = work.liveUrl ? 'ТЕЛЕФОН / 3D · ЭКРАН / ИНСТРУМЕНТ' : 'ТЕЛЕФОН / 3D · ЭКРАН / МАТЕРИАЛЫ ПРОЕКТА';
   $('#activate-label').textContent = work.embedAllowed ? 'Открыть живой экран' : 'Открыть в новой вкладке';
   const i = state.works.findIndex(w => w.slug === work.slug) + 1;
   $('#case-number').textContent = String(i).padStart(2, '0');
@@ -282,3 +283,11 @@ addEventListener('popstate', () => {
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 refresh(true);
+
+// Load 3D independently: the portfolio and live screen also work without WebGL.
+import('/phone-viewer.js').then(({ mountPhone }) => mountPhone({
+  device, space: document.querySelector('.device-space'), getPose: () => ({ rx: state.rx, ry: state.ry })
+})).catch(error => {
+  device.dataset.modelStatus = 'fallback';
+  console.warn('3D-корпус недоступен, экран продолжает работать', error);
+});

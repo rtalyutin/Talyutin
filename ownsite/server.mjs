@@ -1,16 +1,16 @@
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { extname, join, resolve } from 'node:path';
+import { extname, join, resolve, relative, isAbsolute } from 'node:path';
 import { openDatabase, publicWorks, publicWork, publicContacts } from './db.mjs';
 import { openPostgres } from './pg-db.mjs';
 import { seedWorks } from './seed-works.mjs';
 import { openRemotePortfolio } from './remote-db.mjs';
 
 const root = resolve(import.meta.dirname, 'public');
-const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp' };
-const staticFiles = new Set(['/favicon.svg', '/app.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
-const sharedAssets = new Set(['/assets/torn-paper.jpg', '/assets/tear.webp']);
+const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.glb': 'model/gltf-binary', '.txt': 'text/plain' };
+const staticFiles = new Set(['/favicon.svg', '/app.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css', '/phone-viewer.js', '/phone-viewer.js.LEGAL.txt']);
+const sharedAssets = new Set(['/assets/torn-paper.jpg', '/assets/tear.webp', '/assets/rt-phone.glb']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
@@ -89,7 +89,7 @@ async function renderIndex(url, database) {
     .replaceAll('{{ACTIVATE_LABEL}}', chosen?.embedAllowed ? 'Открыть живой экран' : 'Открыть в новой вкладке')
     .replaceAll('{{ACTIVATE_HIDDEN}}', chosen?.liveUrl ? '' : 'hidden')
     .replaceAll('{{SCREEN_CAPTION}}', chosen?.liveUrl ? 'Инструмент доступен по ссылке' : 'Материалы проекта · статус указан в карточке')
-    .replaceAll('{{STAGE_CAPTION}}', chosen?.liveUrl ? 'МОДЕЛЬ / ВРЕМЕННЫЙ КОРПУС · ЭКРАН / ИНСТРУМЕНТ' : 'МОДЕЛЬ / ВРЕМЕННЫЙ КОРПУС · ЭКРАН / МАТЕРИАЛЫ ПРОЕКТА')
+    .replaceAll('{{STAGE_CAPTION}}', chosen?.liveUrl ? 'ТЕЛЕФОН / 3D · ЭКРАН / ИНСТРУМЕНТ' : 'ТЕЛЕФОН / 3D · ЭКРАН / МАТЕРИАЛЫ ПРОЕКТА')
     .replaceAll('{{EXTERNAL_LINKS}}', workLinks)
     .replaceAll('{{REVEAL}}', reveal)
     .replaceAll('{{ENTRIES}}', entries)
@@ -104,7 +104,7 @@ async function renderIndex(url, database) {
 
 function send(res, code, type, body, extra = {}) {
   res.writeHead(code, {
-    'Content-Type': `${type}; charset=utf-8`,
+    'Content-Type': (type === 'model/gltf-binary' ? type : `${type}; charset=utf-8`),
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
@@ -160,7 +160,8 @@ async function handle(req, res, database) {
       }
     }
     const safe = resolve(root, '.' + url.pathname);
-    if (!safe.startsWith(root + '/')) return send(res, 404, 'text/plain', 'Not found');
+    const within = relative(root, safe);
+    if (within.startsWith('..') || isAbsolute(within)) return send(res, 404, 'text/plain', 'Not found');
     try { return send(res, 200, mime[extname(safe)] || 'application/octet-stream', readFileSync(safe)); }
     catch { return send(res, 404, 'text/plain', 'Not found'); }
   }

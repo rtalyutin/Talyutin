@@ -6,12 +6,17 @@
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",
-    "test": "node --test"
+    "test": "node --test",
+    "build:phone": "node scripts/build-phone-viewer.mjs"
   },
   "engines": {
     "node": ">=22.13"
   },
   "dependencies": {
     "pg": "8.23.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.10",
+    "three": "^0.180.0"
   }
 }

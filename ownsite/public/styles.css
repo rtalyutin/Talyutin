@@ -110,3 +110,28 @@ body[data-mode="reveal"] .case-view{display:none}body[data-mode="reveal"] .case-
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important}.device{transition:none}}
 @media(max-width:360px){body[data-orientation="landscape"] .device{--scale:.7}}
+
+/* RT phone: GLB body and a real HTML screen, projected by the same camera. */
+.device{--dw:clamp(250px,22vw,650px);--dh:calc(var(--dw)*2.0833333333);--depth:calc(var(--dw)*.10)}
+.front{border-width:4px;border-radius:calc(var(--dw)*.1333)}
+.device-screen{inset:2.3333% 3.75%;border-radius:calc(var(--dw)*.07778)}
+body[data-orientation="landscape"] .screen-viewport{width:calc(var(--dh)*.9533333333);height:calc(var(--dw)*.925)}
+.device-space{position:relative}
+.phone-gl-layer,.phone-dom-layer{position:absolute;pointer-events:none}
+.phone-gl-layer{z-index:0;filter:drop-shadow(18px 22px 15px rgba(0,0,0,.42))}
+.phone-dom-layer{z-index:1}
+.device-space[data-phone="ready"]{perspective:none}
+.device-space[data-phone="ready"] .device{filter:none;transition:none;will-change:auto;pointer-events:auto}
+.device-space[data-phone="ready"] .face{display:none}
+.device-space[data-phone="ready"] .front{display:block;background:transparent;border:0;box-shadow:none;overflow:visible;border-radius:0}
+.device-space[data-phone="ready"] .front:after,.device-space[data-phone="ready"] .camera{display:none}
+.device-space[data-phone="ready"] .device-screen{box-shadow:none}
+.device-space[data-phone="ready"] .device-grip{border-radius:calc(var(--dw)*.1333)}
+@media(max-width:1100px) and (min-width:821px){.device{--dw:clamp(250px,29vw,330px)}body[data-orientation="landscape"] .device{--scale:.73}}
+@media(max-width:820px){.device{--dw:200px;--dh:calc(var(--dw)*2.0833333333);--depth:20px}body[data-orientation="landscape"] .device{--scale:.76}}
+@media(max-width:360px){body[data-orientation="landscape"] .device{--scale:.67}}
+
+.device-space[data-phone='fallback']{perspective:none}.device-space[data-phone='fallback'] .device{transition:none;pointer-events:auto}
+
+body[data-orientation='portrait'] .device{--scale:.85}
+@media(max-width:1100px) and (min-width:821px){body[data-orientation='portrait'] .device{--scale:.72}}
