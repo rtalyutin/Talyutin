@@ -103,10 +103,25 @@ export function findNewContours(game, move, { searchBudget = 200000 } = {}) {
     }
   }
   if (!component.has(anchor)) return [];
+  // Unit lattice edges can only cross at opposing diagonals of the same
+  // cell. Distinct visited vertices already exclude touches/overlaps.
+  const positions = new Map([...component].map(i => [i, coordinates(game, i)]));
+  const diagonals = new Set();
+  function diagonalKey(a, b) {
+    if (a.x === b.x || a.y === b.y) return null;
+    return (Math.min(a.y, b.y) * game.width + Math.min(a.x, b.x)) * 2 +
+      ((b.x - a.x) * (b.y - a.y) > 0 ? 0 : 1);
+  }
   const found = new Map(), path = [anchor], visited = new Set(path);
   let visits = 0;
   function walk(current) {
     if (++visits > searchBudget) throw new CapturePending('capture-search-limit');
+    // Each accepted traversal must finish at an anchor neighbour larger
+    // than its first neighbour (the existing reverse-cycle deduplication).
+    // If all such vertices are used, only closure at the current dot can
+    // remain; a longer simple cycle is impossible.
+    const canExtend = path.length < 2 || graph.get(anchor).some(n =>
+      component.has(n) && n > path[1] && !visited.has(n));
     for (const next of graph.get(current)) {
       if (!component.has(next)) continue;
       if (next === anchor) {
@@ -117,16 +132,12 @@ export function findNewContours(game, move, { searchBudget = 200000 } = {}) {
         if (interior.length) found.set(canonical(contour), { contour, interior, area: contourArea(contour) });
         continue;
       }
-      if (visited.has(next)) continue;
-      const a = coordinates(game, current), b = coordinates(game, next);
-      let intersects = false;
-      for (let k = 0; k < path.length - 2; k++) {
-        if (segmentRelation(a, b, coordinates(game, path[k]), coordinates(game, path[k + 1])) !== 'none') {
-          intersects = true; break;
-        }
-      }
-      if (intersects) continue;
+      if (!canExtend || visited.has(next)) continue;
+      const key = diagonalKey(positions.get(current), positions.get(next));
+      if (key !== null && diagonals.has(key ^ 1)) continue;
+      if (key !== null) diagonals.add(key);
       visited.add(next); path.push(next); walk(next); path.pop(); visited.delete(next);
+      if (key !== null) diagonals.delete(key);
     }
   }
   walk(anchor);
