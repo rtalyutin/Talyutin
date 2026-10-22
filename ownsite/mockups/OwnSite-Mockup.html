@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Разработка сервисов, автоматизация и интеграции. Задачи, решения и проекты Романа Талютина.">
+<title>Задача → решение · Роман Талютин</title>
+<style>
+:root{--paper:#f3f1e9;--ink:#161614;--muted:#67665e;--red:#f43c28;--blue:#244ce4;--line:#c2c0b6;--gutter:clamp(22px,5.5vw,100px)}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:86px}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,Helvetica,sans-serif;-webkit-font-smoothing:antialiased}body.locked{overflow:hidden}button,a{-webkit-tap-highlight-color:transparent}button{font:inherit;color:inherit;cursor:pointer}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible,select:focus-visible{outline:3px solid var(--blue);outline-offset:5px}button{border-radius:0}::selection{background:var(--blue);color:white}.mono{font-family:"Courier New",monospace;font-size:11px;line-height:1.5;letter-spacing:.07em;text-transform:uppercase}.skip{position:fixed;top:-100px;left:20px;z-index:200;padding:12px;background:var(--ink);color:white}.skip:focus{top:8px}.shell{padding-inline:var(--gutter);max-width:1800px;margin:auto}.topbar{height:80px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--ink);gap:22px}.identity{font-size:16px;font-weight:700;letter-spacing:-.045em;white-space:nowrap}.identity span{color:var(--muted);font-weight:400;margin-left:12px;letter-spacing:0}.nav{display:flex;gap:28px;align-items:center;font-size:13px}.nav>a:not(.contact-link){padding-block:12px}.contact-link{border:1px solid var(--ink);padding:13px 18px;font-weight:700;transition:background .15s,color .15s}.contact-link:hover{background:var(--ink);color:var(--paper)}.contact-link b{margin-left:22px;font-size:18px}.eyebrow{display:flex;align-items:center;gap:12px;margin:0 0 34px}.eyebrow:before{content:"";height:7px;width:7px;background:var(--blue)}h1{font-size:clamp(44px,5.2vw,82px);font-weight:700;line-height:1.01;letter-spacing:-.065em;margin:0 0 24px;max-width:730px}h1 .and{font-family:Georgia,serif;font-style:italic;font-weight:400;letter-spacing:-.08em}.intro{font-size:clamp(16px,1.45vw,22px);line-height:1.45;max-width:450px;margin:0 0 33px;color:#4a4943}.work-link{font-size:15px;font-weight:700;display:flex;align-items:center;gap:42px;border-bottom:1px solid var(--ink);padding-bottom:9px}.work-link span{font-size:24px;transition:transform .2s}.work-link:hover span{transform:translateY(5px)}.location{margin-top:40px;color:var(--muted);font-size:11px}.crossbar{border-block:1px solid var(--ink);display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px 0}.crossbar p{margin:0;font-size:13px}.crossbar .index{color:var(--muted)}.works{padding-top:66px;padding-bottom:75px}.section-top{display:flex;justify-content:space-between;align-items:baseline;gap:24px;margin-bottom:30px}.section-heading{font-size:clamp(38px,4.5vw,66px);font-weight:700;letter-spacing:-.065em;line-height:1;margin:0}.section-heading sup{font-family:"Courier New",monospace;font-size:12px;letter-spacing:0;vertical-align:top;display:inline-block;margin:7px 0 0 12px;color:var(--muted)}.section-note{font-size:12px;color:var(--muted);max-width:245px;line-height:1.5;margin:0}.filters{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:25px}.filter{border:1px solid transparent;background:transparent;padding:9px 14px;font-size:12px;min-height:36px}.filter:hover{border-color:var(--line)}.filter[aria-pressed=true]{background:var(--ink);color:var(--paper)}.project{display:grid;grid-template-columns:46px minmax(200px,1fr) minmax(230px,1fr) 100px;align-items:center;gap:20px;width:100%;text-align:left;border:0;border-top:1px solid var(--line);padding:25px 0;background:none;position:relative;transition:padding .2s,background .2s}.project:last-child{border-bottom:1px solid var(--line)}.project[hidden]{display:none}.project .num{font-size:11px;font-family:"Courier New",monospace;color:var(--muted)}.project .project-title{font-size:clamp(24px,2.3vw,35px);line-height:1.1;letter-spacing:-.055em;margin:0;font-weight:600}.project .desc{font-size:13px;line-height:1.5;color:#57564f}.project .open{justify-self:end;font-size:12px;white-space:nowrap}.project .arrow{font-size:23px;margin-left:20px;display:inline-block;transition:transform .2s}.project:hover{background:#e8e6dc;padding-left:16px;padding-right:16px}.project:hover .arrow{transform:rotate(45deg)}.project:hover .project-title{color:var(--blue)}.work-end{display:flex;justify-content:space-between;gap:22px;margin-top:24px;font-size:11px;color:var(--muted)}.about-work{display:grid;grid-template-columns:1fr 2fr;gap:70px;padding:58px 0 64px;border-top:1px solid var(--ink)}.about-label{margin:0;line-height:1.5}.about-content>p{font-size:clamp(24px,2.5vw,37px);letter-spacing:-.04em;line-height:1.25;margin:0 0 34px;max-width:790px}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}.step{border-top:1px solid var(--line);padding-top:16px}.step span{font-family:"Courier New",monospace;color:var(--blue);font-size:11px}.step h3{font-size:14px;margin:12px 0 9px}.step p{font-size:12px;line-height:1.6;color:var(--muted);margin:0}.contact{background:var(--red);padding:57px var(--gutter) 30px;position:relative;overflow:hidden}.contact-inner{max-width:1600px;margin:auto;position:relative;z-index:1}.contact .mono{margin:0 0 28px}.contact-main{display:grid;grid-template-columns:1.4fr 1fr;gap:60px;align-items:end}.contact h2{font-size:clamp(42px,5vw,76px);letter-spacing:-.065em;line-height:1.02;font-weight:700;margin:0}.contact h2 em{font-family:Georgia,serif;font-weight:400}.contact-p{font-size:15px;margin:22px 0 30px;line-height:1.5}.email-cta{display:inline-flex;align-items:center;justify-content:space-between;gap:44px;background:var(--ink);color:var(--paper);padding:19px 24px;font-size:15px;font-weight:700;transition:background .2s}.email-cta:hover{background:var(--blue)}.email-cta b{font-size:24px}.contact-options{padding-bottom:1px}.contact-options a{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid #a82518;padding:16px 0;font-size:15px}.contact-options a span{font-size:22px}.contact-options a:hover{text-decoration:underline;text-underline-offset:5px}.contact-options a span{transition:transform .2s}.contact-options a:hover span{transform:translate(3px,-3px)}.footer{border-top:1px solid #a82518;padding-top:24px;margin-top:50px;display:flex;justify-content:space-between;gap:20px;font-size:11px}.footer a{text-decoration:underline;text-underline-offset:4px}
+/* Case overlay. Every demo is a real iframe; unknown production URLs are never fabricated. */
+dialog{padding:0;border:1px solid var(--ink);width:min(1240px,calc(100% - 40px));max-width:none;height:calc(100dvh - 64px);max-height:none;background:var(--paper);color:var(--ink);margin:auto}dialog::backdrop{background:rgba(18,18,16,.78)}.dialog-inner{height:100%;display:flex;flex-direction:column;min-height:0}.case-header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ink);padding:16px 25px;gap:15px;flex-shrink:0}.case-header .mono{color:var(--muted)}.close{border:1px solid var(--ink);background:transparent;padding:9px 14px;font-size:12px;white-space:nowrap}.close:hover{color:var(--paper);background:var(--ink)}.case-body{overflow:auto;overscroll-behavior:contain;flex:1;min-height:0}.case-intro{padding:30px 30px 28px;display:grid;grid-template-columns:1fr 1.35fr;gap:45px}.case-title{font-size:clamp(30px,4vw,56px);letter-spacing:-.06em;line-height:1.05;margin:7px 0 16px}.case-kind{color:var(--blue)}.case-brief{font-size:15px;line-height:1.55;margin:0 0 17px}.case-role{font-size:12px;line-height:1.6;margin:0;color:var(--muted)}.case-role strong{color:var(--ink)}.frame-area{border-top:1px solid var(--ink);margin:0 30px 30px}.frame-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;font-size:11px}.frame-controls{display:flex;gap:8px;flex-wrap:wrap}.frame-controls button,.frame-controls a{border:1px solid var(--ink);background:transparent;padding:8px 11px;font-size:11px;min-height:34px}.frame-controls button:hover,.frame-controls a:hover{background:var(--ink);color:var(--paper)}.frame-controls button[disabled]{opacity:.35;cursor:default}.frame-controls [hidden]{display:none}.demo-frame{display:block;width:100%;height:340px;border:1px solid var(--line);background:white}.frame-note{font-size:11px;line-height:1.6;color:var(--muted);margin:12px 0}.case-nav{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:14px 30px;gap:12px;flex-shrink:0}.case-nav button{background:none;border:0;font-size:12px;padding:9px 0}.case-nav button:hover{color:var(--blue)}dialog.expanded .case-intro,dialog.expanded .frame-note{display:none}dialog.expanded .frame-area{margin-bottom:0;border:0;height:100%;display:flex;flex-direction:column}dialog.expanded .demo-frame{flex:1;height:auto;min-height:0}dialog.expanded .case-body{overflow:hidden}.preview-chip{position:fixed;bottom:12px;right:12px;z-index:4;background:var(--paper);border:1px solid var(--ink);font:10px "Courier New",monospace;padding:7px 10px;box-shadow:3px 3px 0 var(--ink);pointer-events:none}.mobile-break{display:none}
+@media(min-width:1600px){}
+@media(max-width:1100px){.identity span{display:none}.project{grid-template-columns:30px 1fr 1fr 80px;gap:14px}.about-work{gap:35px}.contact-main{gap:35px}}
+@media(max-width:760px){html{scroll-padding-top:20px}.topbar{height:70px}.nav{gap:20px;font-size:12px}.nav .contact-link{padding:10px 12px}.nav .contact-link b{margin-left:12px}.nav .process-nav{display:none}.eyebrow{margin-bottom:26px;font-size:10px}h1{font-size:clamp(44px,9vw,68px);max-width:600px;margin-bottom:21px}.intro{font-size:16px;max-width:360px;margin-bottom:25px}.work-link{font-size:13px}.location{margin-top:24px}.crossbar{padding:14px 0;gap:14px}.crossbar p{font-size:11px;max-width:235px}.crossbar .index{font-size:9px;white-space:nowrap}.works{padding-top:43px;padding-bottom:44px}.section-top{margin-bottom:25px}.section-heading{font-size:42px}.section-note{font-size:10px;max-width:145px}.filters{gap:1px;margin-bottom:18px}.filter{padding:9px 10px;font-size:11px}.project{grid-template-columns:25px 1fr 27px;gap:10px;padding:22px 0}.project .project-title{font-size:27px;grid-column:2;grid-row:1}.project .num{grid-row:1}.project .desc{grid-column:2;grid-row:2;font-size:12px}.project .open{grid-column:3;grid-row:1/3;align-self:center}.project .open-label{display:none}.project .arrow{margin:0;font-size:24px}.project:hover{padding-left:6px;padding-right:6px}.work-end{font-size:10px;line-height:1.5}.work-end span:last-child{max-width:180px;text-align:right}.about-work{grid-template-columns:1fr;gap:25px;padding:37px 0 43px}.about-content>p{font-size:26px;max-width:560px}.steps{gap:17px}.step h3{font-size:12px}.step p{font-size:11px}.contact{padding-top:37px}.contact-main{grid-template-columns:1fr;gap:30px}.contact h2{font-size:clamp(40px,9vw,64px)}.contact-p{font-size:14px;margin-top:19px}.email-cta{font-size:14px;padding:17px 22px}.contact-options a{font-size:14px}.footer{margin-top:35px;padding-bottom:14px;font-size:10px;line-height:1.5}.footer .footer-location{display:none}dialog{width:calc(100% - 16px);height:calc(100dvh - 16px)}.case-header{padding:12px 16px}.case-header .mono{font-size:9px}.case-intro{grid-template-columns:1fr;gap:16px;padding:24px 18px}.case-title{font-size:36px;margin-bottom:0}.case-brief{font-size:14px}.frame-area{margin:0 18px 20px}.frame-toolbar{align-items:flex-start;flex-wrap:wrap}.frame-toolbar>.mono{font-size:9px}.demo-frame{height:380px}.case-nav{padding:12px 18px}.case-nav button{font-size:11px}.preview-chip{font-size:8px;bottom:8px;right:8px}}
+@media(max-width:390px){.nav>a:first-child{display:none}.section-top{align-items:flex-start}.section-note{max-width:125px}.steps{grid-template-columns:1fr;gap:19px}.step{display:grid;grid-template-columns:24px 1fr;gap:8px}.step h3{margin:0}.step p{grid-column:2}.project .project-title{font-size:25px}.contact h2{font-size:39px}}
+
+/* Revision 3: literal surname composition; fixed reference coordinates scale together.
+   No image, vector file, font download or canvas. Letter contours are CSS polygons. */
+.hero{position:relative;isolation:isolate;display:block;aspect-ratio:393/184;min-height:0;margin-inline:calc(-1 * var(--gutter));padding:0;overflow:hidden;background:#f2f1ed}
+.reference-scene{position:absolute;top:0;left:0;width:1150px;height:538.422391858px;transform-origin:top left;visibility:hidden}
+.reference-scene.ready{visibility:visible}
+.reference-art{position:absolute;inset:0;pointer-events:none;user-select:none;overflow:hidden}
+.draw{position:absolute;inset:0;display:block}
+.reference-art .ink{background-color:#080807;background-image:radial-gradient(circle,rgba(242,241,237,.65) 0 .6px,transparent 1px),radial-gradient(circle,rgba(242,241,237,.4) 0 .6px,transparent 1.2px);background-size:17px 29px,43px 19px;background-position:5px 9px,17px 3px}
+.reference-art .red{background-color:#f72718;background-image:radial-gradient(circle,rgba(242,241,237,.6) 0 .65px,transparent 1px);background-size:17px 23px}
+.reference-art .hatch,.yu-counter{background:repeating-linear-gradient(118deg,#003cff 0 4px,#f2f1ed 4px 8px)}
+.reference-art .paper{background:#f2f1ed}
+.hero-copy{position:absolute;z-index:10;left:53px;top:211px;width:520px;padding:0;display:flex;flex-direction:column;align-items:flex-start;pointer-events:none}
+.hero-copy a{pointer-events:auto}
+.hero h1{font-family:Arial,Helvetica,sans-serif;font-size:58px;font-weight:700;line-height:54px;letter-spacing:-2.7px;margin:0 0 22px;max-width:none;white-space:nowrap}
+.hero .intro{font-size:24px;line-height:26px;color:#45443f;margin:0 0 24px;max-width:none;white-space:nowrap}
+.hero .work-link{font-size:18px;line-height:22px;font-weight:700;gap:15px;padding-bottom:4px;border-bottom:1px solid #161614}
+.hero .work-link span{font-size:25px;font-weight:400}
+.hero .location{font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#55534e;line-height:20px;letter-spacing:0;text-transform:none;margin-top:27px}
+.yu-ring{position:absolute;left:867px;top:21px;width:222px;height:226px;border-radius:50%;z-index:1;transform:rotate(-9deg)}
+.yu-counter{position:absolute;left:55px;top:56px;width:111px;height:114px;border-radius:50%}
+.name-lane{position:absolute;background:#f2f1ed;z-index:4;display:flex;align-items:center;justify-content:space-evenly;writing-mode:vertical-rl;transform:rotate(27deg);transform-origin:top center;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:13px;letter-spacing:1px;white-space:nowrap;overflow:hidden}
+.name-lane b{transform:rotate(180deg);font-weight:700}
+.lane-center{left:785px;top:58px;width:51px;height:478px}
+.lane-right{left:1110px;top:-44px;width:26px;height:348px}
+/* These overlaps reproduce the clipped circular letter and descending red cuts. */
+.blue-right,.red-right,.red-right-bottom,.letter-n-right{z-index:2}
+@media(max-width:800px){.hero{aspect-ratio:393/184}.hero-copy{width:520px}.hero h1{font-size:58px}.hero .intro{font-size:24px}}
+.bar-red{clip-path:polygon(0.00000% 0.00000%,8.69565% 0.00000%,6.26087% 10.75472%,0.00000% 10.75472%);}
+.bar-black{clip-path:polygon(10.52174% 0.00000%,29.04348% 0.00000%,29.04348% 10.75472%,7.91304% 10.75472%);}
+.bar-blue{clip-path:polygon(29.04348% 0.00000%,43.82609% 0.00000%,41.21739% 10.75472%,29.04348% 10.75472%);}
+.t-red{clip-path:polygon(27.82609% 10.75472%,30.43478% 10.75472%,28.95652% 17.35849%,26.43478% 17.35849%);}
+.letter-t{clip-path:polygon(29.04348% 10.75472%,37.39130% 10.75472%,37.39130% 35.84906%,30.43478% 35.84906%,30.43478% 17.35849%,28.86957% 17.35849%);}
+.letter-a{clip-path:polygon(43.82609% 0.00000%,50.86957% 0.00000%,54.86957% 29.05660%,48.26087% 29.05660%,47.39130% 22.45283%,44.00000% 22.45283%,42.95652% 29.81132%,37.73913% 29.81132%);}
+.a-counter{clip-path:polygon(45.56522% 11.69811%,46.69565% 19.62264%,44.08696% 19.62264%);}
+.a-hatch{clip-path:polygon(52.08696% 11.13208%,54.86957% 29.05660%,48.26087% 29.05660%);}
+.letter-l-diagonal{clip-path:polygon(61.30435% 0.00000%,66.86957% 0.00000%,52.69565% 60.94340%,47.65217% 60.94340%);}
+.l-red{clip-path:polygon(49.91304% 51.13208%,54.78261% 51.13208%,52.69565% 60.94340%,47.65217% 60.94340%);}
+.letter-l-stem{clip-path:polygon(66.17391% 0.00000%,70.78261% 0.00000%,70.78261% 42.26415%,66.00000% 42.26415%);}
+.l-bottom{clip-path:polygon(70.78261% 32.83019%,70.78261% 44.33962%,69.04348% 44.33962%);}
+.letter-yu-stem{clip-path:polygon(71.30435% 4.33962%,75.56522% 4.33962%,75.56522% 39.81132%,71.30435% 39.81132%);}
+.letter-yu-cross{clip-path:polygon(74.60870% 17.54717%,79.82609% 17.54717%,79.82609% 26.41509%,74.60870% 26.41509%);}
+.red-center{clip-path:polygon(60.69565% 44.71698%,64.60870% 30.56604%,64.60870% 44.71698%);}
+.blue-center{clip-path:polygon(70.17391% 41.32075%,75.82609% 41.32075%,72.43478% 56.22642%,68.00000% 56.22642%);}
+.letter-t-bottom{clip-path:polygon(60.69565% 45.09434%,76.08696% 45.09434%,72.43478% 56.22642%,69.04348% 56.22642%,69.04348% 89.24528%,65.56522% 97.35849%,63.30435% 97.35849%,63.30435% 56.22642%,60.69565% 56.22642%);}
+.blue-bottom{clip-path:polygon(63.30435% 56.03774%,63.30435% 97.35849%,53.65217% 97.35849%);}
+.letter-i{clip-path:polygon(71.04348% 66.41509%,76.43478% 45.84906%,76.43478% 66.79245%,80.95652% 48.86792%,84.78261% 48.86792%,84.78261% 83.01887%,80.08696% 83.01887%,80.08696% 66.22642%,71.04348% 93.01887%);}
+.i-red{clip-path:polygon(71.04348% 83.01887%,73.82609% 83.01887%,71.04348% 93.01887%);}
+.letter-n-left{clip-path:polygon(85.47826% 48.86792%,89.73913% 48.86792%,89.73913% 57.73585%,94.52174% 57.73585%,94.52174% 66.60377%,89.73913% 66.60377%,89.73913% 87.35849%,85.47826% 87.35849%);}
+.red-right{clip-path:polygon(100.00000% 14.33962%,100.00000% 42.45283%,96.95652% 42.45283%,94.52174% 55.84906%,89.73913% 55.84906%);}
+.blue-right{clip-path:polygon(100.00000% -10.18868%,100.00000% 14.15094%,89.73913% 55.84906%,85.13043% 55.84906%);}
+.red-right-bottom{clip-path:polygon(96.95652% 66.79245%,100.00000% 65.66038%,100.00000% 99.05660%,89.39130% 99.05660%);}
+.letter-n-right{clip-path:polygon(96.95652% 44.15094%,100.00000% 44.15094%,100.00000% 99.05660%,96.95652% 99.05660%);}
+.fine-diagonal{clip-path:polygon(65.91304% 0.00000%,66.34783% 0.00000%,52.95652% 51.13208%,52.43478% 51.13208%);}
+
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition:none!important}}
+/* Intro v1: a temporary CSS 3D copy assembles; the approved artwork stays intact.
+   Only the leaf plates clip their flat contents. The 3D rig must never flatten. */
+.reference-scene.is-assembling > .reference-art:not(.assembly-art){visibility:hidden}
+.reference-scene > .assembly-art{overflow:visible;z-index:0;perspective:1750px;perspective-origin:70% 43%;transform-style:preserve-3d}
+.assembly-rig{position:absolute;inset:0;transform-style:preserve-3d;transform-origin:70% 43%;pointer-events:none}
+.assembly-plate{position:absolute;overflow:hidden;transform-style:flat;backface-visibility:visible;will-change:transform,opacity;pointer-events:none}
+.assembly-surface{position:absolute;width:1150px;height:538.422391858px;pointer-events:none}
+@media(prefers-reduced-motion:reduce){
+  .reference-scene.is-assembling > .reference-art:not(.assembly-art){visibility:visible}
+  .reference-scene > .assembly-art{display:none}
+}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">К содержанию</a>
+<div class="shell" id="top">
+<header class="topbar"><a class="identity" href="#top">Роман Талютин<span>Разработка и решения</span></a><nav class="nav" aria-label="Основная навигация"><a href="#works">Работы</a><a class="process-nav" href="#approach">Подход</a><a class="contact-link" href="#contact">Обсудить задачу <b aria-hidden="true">↗</b></a></nav></header>
+<main id="main">
+<section class="hero" aria-labelledby="hero-title">
+<div class="reference-scene">
+<div class="reference-art" aria-hidden="true" aria-label="ТАЛЮТИН">
+  <span class="draw red bar-red"></span>
+  <span class="draw ink bar-black"></span>
+  <span class="draw hatch bar-blue"></span>
+  <span class="draw red t-red"></span>
+  <span class="draw ink letter-t"></span>
+  <span class="draw ink letter-a"></span>
+  <span class="draw paper a-counter"></span>
+  <span class="draw hatch a-hatch"></span>
+  <span class="draw ink letter-l-diagonal"></span>
+  <span class="draw red l-red"></span>
+  <span class="draw ink letter-l-stem"></span>
+  <span class="draw red l-bottom"></span>
+  <span class="draw ink letter-yu-stem"></span>
+  <span class="draw ink letter-yu-cross"></span>
+  <span class="draw red red-center"></span>
+  <span class="draw hatch blue-center"></span>
+  <span class="draw ink letter-t-bottom"></span>
+  <span class="draw hatch blue-bottom"></span>
+  <span class="draw ink letter-i"></span>
+  <span class="draw red i-red"></span>
+  <span class="draw ink letter-n-left"></span>
+  <span class="draw red red-right"></span>
+  <span class="draw hatch blue-right"></span>
+  <span class="draw red red-right-bottom"></span>
+  <span class="draw ink letter-n-right"></span>
+  <span class="draw paper fine-diagonal"></span>
+  <span class="yu-ring ink"><i class="yu-counter"></i></span>
+  <span class="name-lane lane-center"><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b></span>
+  <span class="name-lane lane-right"><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b></span>
+</div>
+<div class="hero-copy"><h1 id="hero-title">Разработка<br>и решение задач</h1><p class="intro">Сервисы, автоматизация, интеграции<br>и инструменты для работы.</p><a class="work-link" href="#works">Посмотреть работы <span aria-hidden="true">↓</span></a><span class="location">Ярославль · работаю удалённо</span></div>
+</div>
+</section>
+<div class="crossbar"><p>Разные задачи. Один принцип: довести до действия.</p><span class="index mono">Далее / выбранные работы ↓</span></div>
+<section id="works" class="works" aria-labelledby="works-title"><div class="section-top"><h2 class="section-heading" id="works-title">Работы<sup id="work-count">06</sup></h2><p class="section-note">Что требовалось сделать,<br>какой ход выбран и что получилось.</p></div><div class="filters" role="group" aria-label="Фильтр работ"><button class="filter" data-filter="all" aria-pressed="true">Все работы</button><button class="filter" data-filter="product" aria-pressed="false">Сервисы</button><button class="filter" data-filter="systems" aria-pressed="false">Интеграции</button><button class="filter" data-filter="experience" aria-pressed="false">Игры и истории</button></div>
+<div id="project-list">
+<button class="project" data-project="ycs" data-category="product" aria-haspopup="dialog"><span class="num">01</span><span class="project-title">ЯрКиберСезон</span><span class="desc">Турнир, сайт и Mini App<br>в одной системе</span><span class="open"><span class="open-label">Открыть</span><span class="arrow" aria-hidden="true">↗</span></span></button>
+<button class="project" data-project="booking" data-category="product" aria-haspopup="dialog"><span class="num">02</span><span class="project-title">Онлайн-запись</span><span class="desc">Клиент, мастер и кабинет.<br>Одно свободное время для всех</span><span class="open"><span class="open-label">Открыть</span><span class="arrow" aria-hidden="true">↗</span></span></button>
+<button class="project" data-project="dots" data-category="experience" aria-haspopup="dialog"><span class="num">03</span><span class="project-title">Точки</span><span class="desc">Бумажная игра<br>в браузере</span><span class="open"><span class="open-label">Открыть</span><span class="arrow" aria-hidden="true">↗</span></span></button>
+<button class="project" data-project="webmcp" data-category="systems" aria-haspopup="dialog"><span class="num">04</span><span class="project-title">WebMCP</span><span class="desc">Материалы сайта<br>доступны инструментам ИИ</span><span class="open"><span class="open-label">Открыть</span><span class="arrow" aria-hidden="true">↗</span></span></button>
+<button class="project" data-project="stories" data-category="experience" aria-haspopup="dialog"><span class="num">05</span><span class="project-title">Недетские сказки</span><span class="desc">Авторский мир<br>в историях и визуальных эпизодах</span><span class="open"><span class="open-label">Открыть</span><span class="arrow" aria-hidden="true">↗</span></span></button>
+<button class="project" data-project="audit" data-category="systems" aria-haspopup="dialog"><span class="num">06</span><span class="project-title">Аудит базы данных</span><span class="desc">PostgreSQL: анализ запросов<br>и план изменений</span><span class="open"><span class="open-label">Открыть</span><span class="arrow" aria-hidden="true">↗</span></span></button>
+</div><div class="work-end"><span id="filter-status" role="status" aria-live="polite">Показано 6 работ</span><span>У каждого проекта — свой разбор.</span></div></section>
+<section class="about-work" id="approach" aria-labelledby="approach-title"><p class="about-label mono" id="approach-title">Как строится работа<br>01 / 02 / 03</p><div class="about-content"><p>Можно прийти с готовым ТЗ.<br>Можно — с фразой<br>«вот здесь всё неудобно».</p><div class="steps"><div class="step"><span>01</span><h3>Разобраться</h3><p>Что мешает сейчас, кому нужен результат и какие есть ограничения.</p></div><div class="step"><span>02</span><h3>Собрать решение</h3><p>Выбрать подход, связать части и показать первый рабочий сценарий.</p></div><div class="step"><span>03</span><h3>Проверить в деле</h3><p>Пройти реальную задачу и сверить результат с тем, ради чего всё началось.</p></div></div></div></section>
+</main></div>
+<section class="contact" id="contact" aria-labelledby="contact-title"><div class="contact-inner"><p class="mono">Следующая задача — ваша</p><div class="contact-main"><div><h2 id="contact-title">Расскажите,<br>что нужно<br><em>сделать.</em></h2><p class="contact-p">Для начала хватит нескольких предложений.</p><a class="email-cta" href="mailto:info@yarcyberseason.ru?subject=Обсудить%20задачу">Написать о задаче <b aria-hidden="true">↗</b></a></div><div class="contact-options"><a href="mailto:info@yarcyberseason.ru">info@yarcyberseason.ru <span aria-hidden="true">↗</span></a><a href="tel:+79065253445">+7 906 525-34-45 <span aria-hidden="true">↗</span></a><a href="https://vk.com/talyutin" target="_blank" rel="noopener noreferrer">ВКонтакте <span aria-hidden="true">↗</span></a></div></div><footer class="footer"><span>Роман Талютин · Разработка и решение задач</span><span class="footer-location">Ярославль / удалённо</span><a href="#top">Наверх ↑</a></footer></div></section>
+<div class="preview-chip">МАКЕТ / HTML + CSS + JS</div>
+<dialog id="case-dialog" aria-labelledby="case-title"><div class="dialog-inner"><header class="case-header"><span class="mono" id="case-index">Работа 01 / 06</span><button class="close" id="close-case" autofocus>Закрыть ×</button></header><div class="case-body"><div class="case-intro"><div><span class="case-kind mono" id="case-kind"></span><h2 class="case-title" id="case-title"></h2></div><div><p class="case-brief" id="case-brief"></p><p class="case-role" id="case-role"></p></div></div><section class="frame-area" aria-label="Демонстрация проекта"><div class="frame-toolbar"><span class="mono" id="frame-label">Просмотр проекта</span><div class="frame-controls"><button id="launch-demo" hidden>Загрузить сайт</button><a id="external-demo" href="#" target="_blank" rel="noopener noreferrer" hidden>В новой вкладке ↗</a><button id="expand-demo" aria-pressed="false">Развернуть ↗</button></div></div><iframe class="demo-frame" id="demo-frame" title="Область демонстрации проекта" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" referrerpolicy="no-referrer"></iframe><p class="frame-note" id="frame-note"></p></section></div><footer class="case-nav"><button id="prev-case">← Предыдущая работа</button><button id="next-case">Следующая работа →</button></footer></div></dialog>
+<script>
+'use strict';
+const referenceHero=document.querySelector('.hero');
+const referenceScene=document.querySelector('.reference-scene');
+function sizeReferenceHero(){referenceScene.style.transform='scale('+(referenceHero.getBoundingClientRect().width/1150)+')';referenceScene.classList.add('ready');}
+sizeReferenceHero();
+if(typeof ResizeObserver!=='undefined'){new ResizeObserver(sizeReferenceHero).observe(referenceHero);}else{window.addEventListener('resize',sizeReferenceHero);}
+
+// INTRO_CONTRACT v1: selected "Impossible assembly", once on first appearance.
+// ~3.5s, CSS planes only. No pointer effect, looping, storage or external assets.
+// The original DOM is never transformed/reparented; finish/cancel removes the copy.
+// Browser motion/paint remains a separate acceptance check from JS/static checks.
+(() => {
+  const scene = document.querySelector('.reference-scene');
+  const artwork = scene.querySelector('.reference-art');
+  const hero = scene.closest('.hero');
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (motion.matches || typeof Element.prototype.animate !== 'function' ||
+      !window.CSS || !CSS.supports('perspective', '1750px') ||
+      !CSS.supports('transform-style', 'preserve-3d')) return;
+
+  // Bounds are derived from the existing CSS polygons, in reference-scene pixels.
+  // Adjacent crops partition letters; counters and color inserts stay with them.
+  const plates = [
+    {"name":"bar-red","sources":["bar-red"],"box":[0,0,101,59],"pivot":[50,50],"layer":0,"delay":140,"from":[-237,14,-580,-72,76,-23]},
+    {"name":"bar-black-1","sources":["bar-black"],"box":[89,0,141,59],"pivot":[50,50],"layer":0,"delay":36,"from":[-141,-77,-360,44,-84,32]},
+    {"name":"bar-black-2","sources":["bar-black"],"box":[230,0,106,59],"pivot":[50,50],"layer":0,"delay":72,"from":[-252,-127,-700,84,58,-37]},
+    {"name":"bar-blue","sources":["bar-blue"],"box":[333,0,173,59],"pivot":[50,50],"layer":0,"delay":248,"from":[-47,-13,260,-48,-66,18]},
+    {"name":"t-red","sources":["t-red"],"box":[302,56,49,39],"pivot":[50,50],"layer":0,"delay":284,"from":[-164,-1,-450,58,88,28]},
+    {"name":"letter-t","sources":["letter-t"],"box":[331,56,100,139],"pivot":[50,50],"layer":0,"delay":180,"from":[-179,-99,190,-28,-51,-16]},
+    {"name":"letter-a-1","sources":["letter-a","a-counter","a-hatch"],"box":[432,0,98,162],"pivot":[50,50],"layer":0,"delay":216,"from":[-12,-59,-580,-72,76,-23]},
+    {"name":"letter-a-2","sources":["letter-a","a-counter","a-hatch"],"box":[530,0,48,162],"pivot":[50,50],"layer":0,"delay":0,"from":[-155,29,-360,44,-84,32]},
+    {"name":"letter-a-3","sources":["letter-a","a-counter","a-hatch"],"box":[578,0,55,162],"pivot":[50,50],"layer":0,"delay":36,"from":[-28,-64,-700,84,58,-37]},
+    {"name":"letter-l-diagonal-1","sources":["letter-l-diagonal","l-red"],"box":[546,0,225,192],"pivot":[90,5],"layer":0,"delay":212,"from":[-8,-105,260,44,-82,-24]},
+    {"name":"letter-l-diagonal-2","sources":["letter-l-diagonal","l-red"],"box":[546,192,225,138],"pivot":[10,95],"layer":0,"delay":248,"from":[-124,58,-450,-44,82,24]},
+    {"name":"letter-l-stem","sources":["letter-l-stem"],"box":[758,0,58,229],"pivot":[50,50],"layer":0,"delay":144,"from":[85,8,190,-28,-51,-16]},
+    {"name":"l-bottom","sources":["l-bottom"],"box":[793,175,23,65],"pivot":[50,50],"layer":0,"delay":320,"from":[-41,-75,-580,-72,76,-23]},
+    {"name":"letter-yu-stem","sources":["letter-yu-stem"],"box":[819,22,52,194],"pivot":[50,50],"layer":0,"delay":216,"from":[-2,-45,-360,44,-84,32]},
+    {"name":"letter-yu-cross","sources":["letter-yu-cross"],"box":[857,93,63,51],"pivot":[50,50],"layer":0,"delay":0,"from":[105,40,-700,84,58,-37]},
+    {"name":"red-center","sources":["red-center"],"box":[696,163,49,79],"pivot":[50,50],"layer":0,"delay":176,"from":[-112,-30,260,-48,-66,18]},
+    {"name":"blue-center","sources":["blue-center"],"box":[781,221,93,83],"pivot":[50,50],"layer":0,"delay":212,"from":[70,-54,-450,58,88,28]},
+    {"name":"letter-t-bottom-1","sources":["letter-t-bottom"],"box":[696,241,181,69],"pivot":[50,0],"layer":0,"delay":108,"from":[3,-110,190,-86,-51,-16]},
+    {"name":"letter-t-bottom-2","sources":["letter-t-bottom"],"box":[696,310,181,108],"pivot":[50,0],"layer":0,"delay":144,"from":[-65,-10,-580,74,76,-23]},
+    {"name":"letter-t-bottom-3","sources":["letter-t-bottom"],"box":[696,418,181,108],"pivot":[50,0],"layer":0,"delay":180,"from":[89,90,-360,-65,-84,32]},
+    {"name":"blue-bottom-1","sources":["blue-bottom"],"box":[615,300,115,110],"pivot":[50,50],"layer":0,"delay":356,"from":[-107,28,-700,84,58,-37]},
+    {"name":"blue-bottom-2","sources":["blue-bottom"],"box":[615,410,115,116],"pivot":[50,50],"layer":0,"delay":140,"from":[-26,145,260,-48,-66,18]},
+    {"name":"letter-i-1","sources":["letter-i","i-red"],"box":[816,245,54,257],"pivot":[50,50],"layer":0,"delay":176,"from":[68,19,-450,58,88,28]},
+    {"name":"letter-i-2","sources":["letter-i","i-red"],"box":[870,245,57,257],"pivot":[50,50],"layer":0,"delay":212,"from":[-53,-20,190,-28,-51,-16]},
+    {"name":"letter-i-3","sources":["letter-i","i-red"],"box":[927,245,50,257],"pivot":[50,50],"layer":0,"delay":248,"from":[130,96,-580,-72,76,-23]},
+    {"name":"letter-n-left-1","sources":["letter-n-left"],"box":[981,262,108,93],"pivot":[50,50],"layer":0,"delay":144,"from":[51,62,-360,44,-84,32]},
+    {"name":"letter-n-left-2","sources":["letter-n-left"],"box":[981,355,108,117],"pivot":[50,50],"layer":0,"delay":180,"from":[41,-15,-700,84,58,-37]},
+    {"name":"red-right","sources":["red-right"],"box":[1030,76,120,226],"pivot":[50,50],"layer":2,"delay":356,"from":[179,-19,260,-48,-66,18]},
+    {"name":"blue-right","sources":["blue-right"],"box":[977,0,173,302],"pivot":[50,50],"layer":2,"delay":140,"from":[3,50,-450,58,88,28]},
+    {"name":"red-right-bottom","sources":["red-right-bottom"],"box":[1026,352,124,183],"pivot":[50,50],"layer":2,"delay":176,"from":[137,38,190,-28,-51,-16]},
+    {"name":"letter-n-right-1","sources":["letter-n-right"],"box":[1113,236,37,154],"pivot":[50,50],"layer":2,"delay":72,"from":[132,-36,-580,-72,76,-23]},
+    {"name":"letter-n-right-2","sources":["letter-n-right"],"box":[1113,390,37,145],"pivot":[50,50],"layer":2,"delay":108,"from":[34,124,-360,44,-84,32]},
+    {"name":"fine-diagonal","sources":["fine-diagonal"],"box":[601,0,164,277],"pivot":[50,50],"layer":0,"delay":144,"from":[54,9,-700,84,58,-37]},
+    {"name":"yu-ring","sources":["yu-ring"],"box":[849,4,258,260],"pivot":[50,50],"layer":1,"delay":180,"from":[70,-28,-510,16,89,-34]},
+    {"name":"lane-center","sources":["lane-center"],"box":[569,45,266,452],"pivot":[75,10],"layer":4,"delay":326,"from":[-110,80,280,-24,62,-18]},
+    {"name":"lane-right","sources":["lane-right"],"box":[952,0,184,273],"pivot":[75,10],"layer":4,"delay":110,"from":[-110,80,280,-24,62,-18]}
+  ];
+  const animations = [];
+  let stage = null;
+  let observer = null;
+  let state = 'waiting';
+  let watchdog = 0;
+  const ease = 'cubic-bezier(.22,.72,.16,1)';
+  const neutral = 'translate3d(0px,0px,0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg)';
+  const pose = (x,y,z,rx,ry,rz) =>
+    `translate3d(${x}px,${y}px,${z}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${rz}deg)`;
+
+  function settle() {
+    if (state === 'settled') return;
+    state = 'settled';
+    clearTimeout(watchdog);
+    if (observer) observer.disconnect();
+    document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener('pagehide', settle);
+    if (motion.removeEventListener) motion.removeEventListener('change', onMotion);
+    else if (motion.removeListener) motion.removeListener(onMotion);
+    // Reveal the untouched original in the same task that removes the 3D copy.
+    scene.classList.remove('is-assembling');
+    if (stage) stage.remove();
+    for (const animation of animations) animation.cancel();
+    animations.length = 0;
+    stage = null;
+  }
+
+  function track(element, frames, timing) {
+    const animation = element.animate(frames, {fill:'both', ...timing});
+    animations.push(animation);
+    // cancel() rejects finished; bind both handlers immediately, even during setup.
+    animation.finished.then(() => {}, settle);
+    return animation;
+  }
+
+  function start() {
+    if (state !== 'waiting' || document.hidden) return;
+    if (motion.matches) { settle(); return; }
+    state = 'assembling';
+    if (observer) observer.disconnect();
+    try {
+      stage = document.createElement('div');
+      stage.className = 'reference-art assembly-art';
+      stage.setAttribute('aria-hidden', 'true');
+      const rig = document.createElement('div');
+      rig.className = 'assembly-rig';
+      stage.appendChild(rig);
+
+      plates.forEach((part, i) => {
+        const [x,y,width,height] = part.box;
+        const plate = document.createElement('div');
+        plate.className = 'assembly-plate';
+        plate.dataset.part = part.name;
+        Object.assign(plate.style, {
+          left:x+'px', top:y+'px', width:width+'px', height:height+'px',
+          transformOrigin:part.pivot[0]+'% '+part.pivot[1]+'%', zIndex:String(part.layer)
+        });
+        const surface = document.createElement('div');
+        surface.className = 'assembly-surface';
+        surface.style.left = -x+'px';
+        surface.style.top = -y+'px';
+        for (const selector of part.sources) {
+          const source = artwork.querySelector('.'+selector);
+          if (!source) throw new Error('Missing intro fragment: '+selector);
+          surface.appendChild(source.cloneNode(true));
+        }
+        plate.appendChild(surface);
+        rig.appendChild(plate);
+        const [dx,dy,dz,rx,ry,rz] = part.from;
+        const bend = i % 2 ? 1 : -1;
+        const lag = part.delay;
+        track(plate, [
+          {offset:0, transform:pose(dx,dy,dz,rx,ry,rz), opacity:0},
+          {offset:.07, transform:pose(dx*.94,dy*.96,dz,rx*.97,ry*.98,rz), opacity:1, easing:'cubic-bezier(.42,0,.3,1)'},
+          {offset:.43, transform:pose(dx*.47+bend*24,dy*.52-18,dz*.66,rx*.58,ry*.67,rz*.42), opacity:1, easing:ease},
+          {offset:.76, transform:pose(dx*.09-bend*8,dy*.12,dz*.17,rx*-.12,ry*.2,rz*-.08), opacity:1, easing:ease},
+          {offset:.92, transform:pose(bend*1.2,-.7,2,rx*.012,ry*-.018,0), opacity:1, easing:'cubic-bezier(.2,0,.2,1)'},
+          {offset:1, transform:neutral, opacity:1}
+        ], {duration:3500-lag, delay:lag});
+      });
+
+      track(rig, [
+        {offset:0, transform:pose(55,-12,-160,9,-17,-3), easing:'cubic-bezier(.4,0,.3,1)'},
+        {offset:.46, transform:pose(-18,8,-65,-4,7,1), easing:ease},
+        {offset:.87, transform:pose(0,0,-3,.4,-.6,0), easing:ease},
+        {offset:1, transform:neutral}
+      ], {duration:3500});
+
+      scene.insertBefore(stage, scene.querySelector('.hero-copy'));
+      scene.classList.add('is-assembling');
+      // A single shared start keeps every plate and the camera on the same clock.
+      const epoch = document.timeline.currentTime;
+      if (typeof epoch === 'number') {
+        for (const animation of animations) animation.startTime = epoch;
+      }
+      Promise.all(animations.map(animation => animation.finished)).then(settle, settle);
+      // Restore a useful static page if a host interrupts the animation timeline.
+      watchdog = setTimeout(settle, 4500);
+    } catch (error) {
+      settle();
+      console.warn('Surname intro skipped; the static artwork is available.', error);
+    }
+  }
+
+  function tryStart() {
+    if (document.hidden || state !== 'waiting') return;
+    const rect = hero.getBoundingClientRect();
+    if (rect.width > 0 && rect.bottom > 0 && rect.top < window.innerHeight) start();
+  }
+  function onVisibility() {
+    if (document.hidden && state === 'assembling') settle();
+    else tryStart();
+  }
+  function onMotion(event) { if (event.matches) settle(); }
+  document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener('pagehide', settle);
+  if (motion.addEventListener) motion.addEventListener('change', onMotion);
+  else if (motion.addListener) motion.addListener(onMotion);
+  if (typeof IntersectionObserver !== 'undefined') {
+    observer = new IntersectionObserver(tryStart, {threshold:0});
+    observer.observe(hero);
+  }
+  tryStart();
+  // Older hosts without observers keep the approved still if the hero is offscreen.
+  if (!observer && state === 'waiting' && !document.hidden) settle();
+})();
+
+
+// One self-contained visual prototype. Project URLs are opt-in, with no automatic loading.
+// Unconfirmed or private demos stay explicitly disconnected; no production data is copied.
+const projects=[
+{id:'ycs',title:'ЯрКиберСезон',kind:'Сервис / киберспорт',brief:'Собрать турнир в одну систему: команды, расписание, матчи, результаты и вход из Telegram. Сайт и Mini App связывают эти части в один пользовательский путь.',role:'Основатель и продуктовый владелец: организация турниров, постановка задач, продуктовые решения и координация реализации.',url:'https://yarcyberseason.ru/',note:'Внешний сайт загружается только по нажатию. Если он не разрешает просмотр внутри страницы, откройте его в новой вкладке.'},
+{id:'booking',title:'Онлайн-запись',kind:'Сервис / расписание',brief:'Помочь клиенту найти время, в которое свободны и мастер, и подходящий кабинет. Для администратора — управление услугами, ресурсами и расписанием.',role:'Постановка сценариев, бизнес-правил и критериев приёмки; продуктовые решения по конструктору и календарю.',note:'В этом макете демо записи не подключено. Для показа нужен отдельный демонстрационный адрес без данных клиентов.'},
+{id:'dots',title:'Точки',kind:'Игра / браузер',brief:'Перенести игру с бумажного листа в браузер: ходить по сетке, окружать точки и играть против компьютера. Главное в задаче — расчёт захвата и поведение соперника.',role:'Выбор формата, уточнение правил, критерии расчёта захвата и направление интерфейса.',note:'В этом макете игровая сборка не подключена. Здесь предусмотрено встраивание самой игры, а не её скриншота.'},
+{id:'webmcp',title:'WebMCP',kind:'Интеграция / Sparrow',brief:'Дать ИИ-инструментам структурированный доступ к публичным материалам сайта: каталог страниц, поиск и получение содержимого с источником.',role:'Постановка задачи и границ клиентской поставки. Подготовлен комплект для публичных страниц; установка на реальных доменах здесь не заявляется.',note:'Публичная демонстрация не подключена. Клиентские кабинеты и закрытые материалы в макет не включены.'},
+{id:'stories',title:'Недетские сказки',kind:'Авторский проект / истории',brief:'Развить отдельные сюжеты в авторский мир: текст, визуальные эпизоды и последовательность публикаций должны продолжать одну историю.',role:'Инициатор проекта, сюжетные решения и редактура.',link:'https://t.me/talyutinstories/101',note:'Пример публикации доступен по ссылке. Просмотр канала внутри страницы в этом макете не подключён.'},
+{id:'audit',title:'Аудит базы данных',kind:'Анализ / PostgreSQL',brief:'Разобрать объекты базы, зависимости и профиль запросов. Найти узкие места и определить, какие изменения стоит испытывать первыми.',roleLabel:'Статус кейса. ',role:'Подготовлены аналитические материалы и план модернизации. Персональный вклад и право публичного показа требуют уточнения; внедрение и достигнутое ускорение здесь не заявляются.',note:'В макет не включены отчёт, имя заказчика и внутренние данные. Для показа нужен согласованный обезличенный фрагмент.'}
+];
+const $=id=>document.getElementById(id),dialog=$('case-dialog'),frame=$('demo-frame');
+let activeIndex=0,returnFocus=null;
+function escapeText(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function previewDocument(project){
+ const connected=Boolean(project.url);return `<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#e9e7de;color:#161614;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}.wrap{width:100%;max-width:660px;border-top:1px solid #aaa89e;padding-top:24px}.tag{font:10px 'Courier New',monospace;letter-spacing:.08em;color:#67665e}h1{font-size:clamp(30px,6vw,60px);line-height:1.05;letter-spacing:-.06em;margin:18px 0}p{font-size:14px;line-height:1.6;max-width:510px;color:#59584f;margin:18px 0 0}.line{height:6px;width:64px;background:#244ce4;margin-top:28px}</style><div class="wrap"><span class="tag">${connected?'ВНЕШНИЙ ПРОЕКТ / ПО ЗАПРОСУ':'МАКЕТ / ОБЛАСТЬ ДЕМО'}</span><h1>${escapeText(project.title)}</h1><p>${connected?'Нажмите «Загрузить сайт» над этим окном, чтобы открыть проект здесь.':'Демонстрация пока не подключена. Здесь будет открыт сам инструмент — с его собственным интерфейсом и управлением.'}</p><div class="line"></div></div></html>`;
+}
+function renderCase(index){
+ activeIndex=(index+projects.length)%projects.length;const p=projects[activeIndex];
+ dialog.classList.remove('expanded');$('expand-demo').textContent='Развернуть ↗';$('expand-demo').setAttribute('aria-pressed','false');
+ $('case-index').textContent=`Работа ${String(activeIndex+1).padStart(2,'0')} / ${String(projects.length).padStart(2,'0')}`;
+ $('case-title').textContent=p.title;$('case-kind').textContent=p.kind;$('case-brief').textContent=p.brief;
+ $('case-role').textContent=(p.roleLabel||'Мой вклад. ')+p.role;$('frame-note').textContent=p.note;
+ frame.removeAttribute('src');frame.srcdoc=previewDocument(p);frame.title='Демонстрация: '+p.title;
+ $('launch-demo').hidden=!p.url;$('launch-demo').textContent='Загрузить сайт';$('launch-demo').disabled=false;
+ const external=p.url||p.link;$('external-demo').hidden=!external;$('external-demo').href=external||'#';
+ $('frame-label').textContent=p.url?'Просмотр проекта':'Область демонстрации';
+ document.querySelector('.case-body').scrollTop=0;
+}
+document.querySelectorAll('[data-project]').forEach(button=>button.addEventListener('click',()=>{returnFocus=button;renderCase(projects.findIndex(p=>p.id===button.dataset.project));dialog.showModal();document.body.classList.add('locked');$('close-case').focus();}));
+function closeCase(){dialog.close();}
+$('close-case').addEventListener('click',closeCase);
+dialog.addEventListener('close',()=>{document.body.classList.remove('locked');frame.removeAttribute('src');frame.removeAttribute('srcdoc');returnFocus?.focus();});
+dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeCase();}});
+$('prev-case').addEventListener('click',()=>renderCase(activeIndex-1));$('next-case').addEventListener('click',()=>renderCase(activeIndex+1));
+$('expand-demo').addEventListener('click',()=>{const expanded=dialog.classList.toggle('expanded');$('expand-demo').textContent=expanded?'Свернуть ↙':'Развернуть ↗';$('expand-demo').setAttribute('aria-pressed',String(expanded));});
+$('launch-demo').addEventListener('click',()=>{const p=projects[activeIndex];if(!p.url)return;frame.removeAttribute('srcdoc');frame.src=p.url;$('launch-demo').textContent='Перезагрузить';$('frame-label').textContent='Внешний сайт';});
+document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{const category=button.dataset.filter;let count=0;document.querySelectorAll('[data-filter]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));document.querySelectorAll('.project').forEach(item=>{item.hidden=category!=='all'&&item.dataset.category!==category;if(!item.hidden)count++;});$('work-count').textContent=String(count).padStart(2,'0');$('filter-status').textContent=`Показано ${count} ${count===1?'работа':count<5?'работы':'работ'}`;}));
+</script>
+</body>
+</html>
