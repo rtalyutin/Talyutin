@@ -55,11 +55,23 @@ async function getContacts(database) {
   return typeof database.publicContacts === 'function' ? database.publicContacts() : publicContacts(database);
 }
 
+// Approved public contacts from the accepted homepage, independent of portfolio uptime.
+// A successful empty contact response still hides them intentionally.
+const offlineContacts = [
+  { label: 'Написать письмо', href: 'mailto:info@yarcyberseason.ru' },
+  { label: 'Позвонить', href: 'tel:+79065253445' },
+  { label: 'ВКонтакте', href: 'https://vk.com/talyutin' }
+];
+
 async function renderIndex(url, database) {
-  const works = await getWorks(database);
+  const [worksResult, contactsResult] = await Promise.allSettled([
+    getWorks(database), getContacts(database)
+  ]);
+  const worksUnavailable = worksResult.status === 'rejected';
+  const works = worksUnavailable ? [] : worksResult.value;
   const requested = url.searchParams.get('work');
   const chosen = works.find(work => work.slug === requested);
-  const contacts = await getContacts(database);
+  const contacts = contactsResult.status === 'fulfilled' ? contactsResult.value : offlineContacts;
   const outlets = contacts.map(link => {
     const kind = link.href.startsWith('tel:') ? 'phone' : link.href.startsWith('mailto:') ? 'email' : 'external';
     let value = kind === 'external' ? link.label : link.href.replace(/^(tel:|mailto:)/, '').split('?')[0];
@@ -69,9 +81,10 @@ async function renderIndex(url, database) {
   const primary = contacts.find(link => link.href.startsWith('mailto:')) ?? contacts[0];
   const values = {
     PAGE_TITLE: escapeHtml(chosen ? `${chosen.title} · Роман Талютин` : 'Задача → решение · Роман Талютин'),
-    CATALOGUE: renderCatalogue(works, chosen?.slug) || '<p class="catalogue-empty">Работы скоро появятся.</p>',
+    CATALOGUE: renderCatalogue(works, chosen?.slug) || `<p class="catalogue-empty">${worksUnavailable ? 'Портфолио временно недоступно. Попробуйте зайти позже.' : 'Работы скоро появятся.'}</p>`,
     CASE_COUNT: String(works.length).padStart(2, '0'),
-    CASE_TOTAL: String(works.length),
+    WORKS_UNAVAILABLE: String(worksUnavailable),
+    FILTER_STATUS: worksUnavailable ? 'Портфолио временно недоступно' : `Показано работ: ${works.length}`,
     SELECTED_CASE: chosen ? `<section class="case-fallback" id="selected-case" aria-labelledby="selected-case-title">${renderCase(chosen, { titleId: 'selected-case-title' })}<a class="case-fallback-close" href="/#works">← Все работы</a></section>` : '',
     CONTACT_CTA: primary ? `<a class="email-cta" href="${escapeHtml(primary.href)}">${primary.href.startsWith('tel:') ? 'Позвонить' : 'Написать о задаче'} <b aria-hidden="true">↗</b></a>` : '',
     CONTACT_OUTLETS: outlets,

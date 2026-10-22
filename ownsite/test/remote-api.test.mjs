@@ -53,17 +53,60 @@ test('malformed public response, private fields and executable links fail closed
   }
 });
 
-test('failed upstream gives 503 while liveness remains healthy and hidden lookup remains closed', async t => {
+test('failed upstream preserves the homepage while data routes report 503', async t => {
   const remote = openRemotePortfolio('https://api.example.test/ownsite', { fetchImpl: async () => new Response('SECRET CONNECTION URL', { status: 503 }) });
   const server = createServer(createHandler(remote));
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const url = `http://127.0.0.1:${server.address().port}`;
-  for (const path of ['/', '/api/works', '/readyz']) {
+  for (const path of ['/api/works', '/api/works/ycs', '/readyz']) {
     const result = await fetch(url + path);
     assert.equal(result.status, 503); assert.equal(await result.text(), 'Service unavailable');
   }
   assert.equal((await fetch(url + '/healthz')).status, 200);
+  for (const path of ['/', '/index.html', '/?work=ycs&mode=reveal']) {
+    const page = await fetch(url + path);
+    assert.equal(page.status, 200);
+    assert.match(page.headers.get('content-type'), /text\/html/);
+    const html = await page.text();
+    for (const marker of ['ТАЛЮТИН', 'id="approach"', 'id="contact"', '/motion.js', 'mailto:info@yarcyberseason.ru', 'tel:+79065253445', 'https://vk.com/talyutin']) assert.ok(html.includes(marker), marker);
+    assert.match(html, /Портфолио временно недоступно/);
+    assert.match(html, /<template id="works-data" data-unavailable="true">\[\]<\/template>/);
+    assert.doesNotMatch(html, /class="project"|id="selected-case"|SECRET CONNECTION|api\.example\.test|Service unavailable|\{\{[A-Z_]+\}\}/);
+  }
+});
+
+test('homepage isolates dependency failures, recovers and respects successful empty responses', async t => {
+  const rows = fixture();
+  const contacts = [{ label: 'Связаться', href: 'mailto:current@example.test' }];
+  let state;
+  const remote = openRemotePortfolio('https://api.example.test/ownsite', { fetchImpl: async url => {
+    const result = url.endsWith('/api/contacts') ? state.contacts : state.works;
+    return result === null ? new Response('upstream failed', { status: 503 }) : response(result);
+  } });
+  const server = createServer(createHandler(remote));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const url = `http://127.0.0.1:${server.address().port}`;
+  // Same running server: recovery must use current public data, without a restart or stale cache.
+  for (state of [
+    { works: null, contacts: null },
+    { works: null, contacts },
+    { works: rows, contacts: null },
+    { works: rows, contacts },
+    { works: [], contacts: [] }
+  ]) {
+    const page = await fetch(url);
+    assert.equal(page.status, 200);
+    const html = await page.text();
+    assert.equal(html.includes('data-unavailable="true"'), state.works === null);
+    assert.equal(html.includes('Портфолио временно недоступно'), state.works === null);
+    assert.equal(html.includes('class="project"'), Boolean(state.works?.length));
+    assert.equal(html.includes('mailto:current@example.test'), Boolean(state.contacts?.length));
+    assert.equal(html.includes('mailto:info@yarcyberseason.ru'), state.contacts === null);
+    if (state.works?.length === 0) assert.match(html, /Работы скоро появятся/);
+    if (state.contacts?.length === 0) assert.match(html, /Контакты скоро появятся/);
+  }
 });
 
 test('streamed response size and timeout bounds are enforced', async () => {

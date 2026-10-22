@@ -16,7 +16,7 @@ const base = {
 };
 const other = { ...base, slug: 'other', title: 'Second work', liveUrl: null, embedAllowed: false };
 
-function harness({ rows = [base, other], href = 'http://portfolio.test/' } = {}) {
+function harness({ rows = [base, other], href = 'http://portfolio.test/', unavailable = false } = {}) {
   const timers = new Map();
   let timerId = 0;
   class Element {
@@ -92,11 +92,16 @@ function harness({ rows = [base, other], href = 'http://portfolio.test/' } = {})
     return elements.get(id);
   };
   element('works-data').content = { textContent: JSON.stringify(rows) };
+  element('works-data').dataset.unavailable = String(unavailable);
   element('project-list').innerHTML = renderCatalogue(rows);
+  const filters = ['all', 'product', 'systems', 'experience'].map(category => {
+    const button = new Element('button'); button.dataset.filter = category; return button;
+  });
   const documentEvents = new Element('document');
   const document = {
     body: new Element('body'), activeElement: null,
-    getElementById: element, createElement: tag => new Element(tag), querySelectorAll: () => [],
+    getElementById: element, createElement: tag => new Element(tag),
+    querySelectorAll: selector => selector === '[data-filter]' ? filters : [],
     addEventListener: (...args) => documentEvents.addEventListener(...args),
     dispatch: (...args) => documentEvents.dispatch(...args), hidden: false
   };
@@ -119,6 +124,8 @@ function harness({ rows = [base, other], href = 'http://portfolio.test/' } = {})
     context, element, document, window, location, addresses, pending, timers,
     state: expression => runInContext(expression, context),
     open: (slug, push = false) => context.openCase(slug, push),
+    refresh: () => context.refreshCatalogue(),
+    filter: category => filters.find(button => button.dataset.filter === category).dispatch('click'),
     close: () => context.closeCase(),
     frame: () => element('case-body').querySelector('iframe'),
     launch: () => {
@@ -244,6 +251,8 @@ test('network and malformed-list failures retain no active work or iframe', asyn
       assert.equal(h.frame(), null);
       assert.equal(h.state('activeWork'), null);
       assert.match(h.element('case-body').querySelector('h2').textContent, /Не удалось/);
+      assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 0);
+      assert.equal(h.state('worksUnavailable'), true);
       assert.equal(h.timers.size, 0);
     });
   }
@@ -286,4 +295,59 @@ test('hiding the page unloads an active iframe and rechecks publication when it 
   assert.equal(h.state('activeWork'), null);
   assert.match(h.element('case-body').querySelector('h2').textContent, /недоступна/);
   assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 1);
+});
+
+test('the SSR unavailable flag survives filtering and clears when the page recovers', async () => {
+  const h = harness({ rows: [], unavailable: true });
+  h.filter('systems');
+  assert.equal(h.state('worksUnavailable'), true);
+  assert.equal(h.element('filter-status').textContent, 'Портфолио временно недоступно');
+  assert.equal(h.element('work-count').textContent, '00');
+  assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 0);
+
+  h.window.dispatch('pageshow', { persisted: true });
+  h.answer(0, [base, { ...other, slug: 'dashboard' }]);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(h.state('worksUnavailable'), false);
+  assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 2);
+  assert.equal(h.element('work-count').textContent, '01');
+  assert.equal(h.element('filter-status').textContent, 'Показано работ: 1');
+  assert.equal(h.element('case-dialog').open, false);
+  assert.equal(h.frame(), null);
+});
+
+test('a failed catalogue refresh removes stale cards and filters keep the unavailable state', async () => {
+  const h = harness();
+  assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 2);
+  const refresh = h.refresh();
+  h.answer(0, [], false); await refresh;
+  assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 0);
+  assert.equal(h.state('works.length'), 0);
+  assert.match(h.element('project-list').innerHTML, /Портфолио временно недоступно/);
+  for (const filter of ['product', 'experience', 'all']) {
+    h.filter(filter);
+    assert.equal(h.element('filter-status').textContent, 'Портфолио временно недоступно');
+    assert.equal(h.element('work-count').textContent, '00');
+  }
+  const recovery = h.refresh();
+  h.answer(1, [other]); await recovery;
+  assert.equal(h.state('worksUnavailable'), false);
+  assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 1);
+  assert.equal(h.element('filter-status').textContent, 'Показано работ: 1');
+  assert.doesNotMatch(h.element('project-list').innerHTML, /недоступно/);
+  assert.equal(h.timers.size, 0);
+});
+
+test('a stale refresh failure cannot remove a newer successful catalogue', async () => {
+  const h = harness();
+  const old = h.refresh();
+  const fresh = h.refresh();
+  h.answer(1, [{ ...other, title: 'Current catalogue' }]); await fresh;
+  h.pending[0].reject(new Error('Late failure')); await old;
+  assert.equal(h.state('worksUnavailable'), false);
+  assert.equal(h.state('works.length'), 1);
+  assert.equal(h.state('works[0].title'), 'Current catalogue');
+  assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 1);
+  assert.equal(h.element('filter-status').textContent, 'Показано работ: 1');
+  assert.equal(h.timers.size, 0);
 });

@@ -5,6 +5,7 @@ const dialog = $('case-dialog');
 const body = $('case-body');
 const list = $('project-list');
 let works = JSON.parse($('works-data').content.textContent);
+let worksUnavailable = $('works-data').dataset.unavailable === 'true';
 let activeSlug = '';
 let activeWork = null;
 let returnSlug = '';
@@ -19,11 +20,11 @@ function filterWorks() {
     if (!item.hidden) count++;
   });
   $('work-count').textContent = String(count).padStart(2, '0');
-  $('filter-status').textContent = `Показано работ: ${count}`;
+  $('filter-status').textContent = worksUnavailable ? 'Портфолио временно недоступно' : `Показано работ: ${count}`;
 }
 
 function updateCatalogue() {
-  list.innerHTML = renderCatalogue(works, activeSlug) || '<p class="catalogue-empty">Работы скоро появятся.</p>';
+  list.innerHTML = renderCatalogue(works, activeSlug) || `<p class="catalogue-empty">${worksUnavailable ? 'Портфолио временно недоступно. Попробуйте зайти позже.' : 'Работы скоро появятся.'}</p>`;
   filterWorks();
 }
 
@@ -75,6 +76,7 @@ async function openCase(slug, push = false) {
     if (!Array.isArray(fresh)) throw new Error('Invalid portfolio');
     if (current !== revision || !dialog.open) return;
     works = fresh;
+    worksUnavailable = false;
     updateCatalogue();
     const index = works.findIndex(work => work.slug === slug);
     if (index === -1) { message('Работа недоступна', 'Она больше не опубликована. Другие работы — в каталоге.'); return; }
@@ -87,6 +89,9 @@ async function openCase(slug, push = false) {
     return current;
   } catch {
     if (current !== revision || !dialog.open) return;
+    works = [];
+    worksUnavailable = true;
+    updateCatalogue();
     message('Не удалось загрузить работу', 'Попробуйте открыть её снова чуть позже.');
   } finally {
     clearTimeout(timeout);
@@ -107,9 +112,13 @@ async function refreshCatalogue() {
     if (!Array.isArray(fresh)) throw new Error('Invalid portfolio');
     if (current !== revision || dialog.open) return;
     works = fresh;
+    worksUnavailable = false;
     updateCatalogue();
   } catch {
-    if (current === revision) $('filter-status').textContent = 'Не удалось обновить список работ.';
+    if (current !== revision) return;
+    works = [];
+    worksUnavailable = true;
+    updateCatalogue();
   } finally {
     clearTimeout(timeout);
     if (current === revision) request = null;

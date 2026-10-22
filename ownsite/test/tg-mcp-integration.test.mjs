@@ -43,6 +43,6 @@ test('PostgreSQL constructor → mounted Tg-mcp HTTP → frontend SSR and revoca
   await backend.close();
   assert.equal((await fetch(origin+'/healthz')).status,200);
   assert.equal((await fetch(origin+'/readyz')).status,503);
-  page = await fetch(origin+'/');assert.equal(page.status,503);
-  assert.equal(await page.text(),'Service unavailable');
+  page = await fetch(origin+'/');assert.equal(page.status,200);
+  assert.match(await page.text(),/Портфолио временно недоступно/);
 });
