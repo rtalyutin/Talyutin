@@ -7,10 +7,11 @@ import { openPostgres } from './pg-db.mjs';
 import { seedWorks } from './seed-works.mjs';
 import { openRemotePortfolio } from './remote-db.mjs';
 import { renderCatalogue, renderCase } from './public/registry.js';
+import { offlineWorks } from './public/offline-works.js';
 
 const root = resolve(import.meta.dirname, 'public');
 const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.txt': 'text/plain' };
-const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/motion.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
+const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
@@ -68,7 +69,7 @@ async function renderIndex(url, database) {
     getWorks(database), getContacts(database)
   ]);
   const worksUnavailable = worksResult.status === 'rejected';
-  const works = worksUnavailable ? [] : worksResult.value;
+  const works = worksUnavailable ? offlineWorks : worksResult.value;
   const requested = url.searchParams.get('work');
   const chosen = works.find(work => work.slug === requested);
   const contacts = contactsResult.status === 'fulfilled' ? contactsResult.value : offlineContacts;
@@ -84,7 +85,7 @@ async function renderIndex(url, database) {
     CATALOGUE: renderCatalogue(works, chosen?.slug) || `<p class="catalogue-empty">${worksUnavailable ? 'Портфолио временно недоступно. Попробуйте зайти позже.' : 'Работы скоро появятся.'}</p>`,
     CASE_COUNT: String(works.length).padStart(2, '0'),
     WORKS_UNAVAILABLE: String(worksUnavailable),
-    FILTER_STATUS: worksUnavailable ? 'Портфолио временно недоступно' : `Показано работ: ${works.length}`,
+    FILTER_STATUS: worksUnavailable ? `Избранные проекты: ${works.length}` : `Показано работ: ${works.length}`,
     SELECTED_CASE: chosen ? `<section class="case-fallback" id="selected-case" aria-labelledby="selected-case-title">${renderCase(chosen, { titleId: 'selected-case-title' })}<a class="case-fallback-close" href="/#works">← Все работы</a></section>` : '',
     CONTACT_CTA: primary ? `<a class="email-cta" href="${escapeHtml(primary.href)}">${primary.href.startsWith('tel:') ? 'Позвонить' : 'Написать о задаче'} <b aria-hidden="true">↗</b></a>` : '',
     CONTACT_OUTLETS: outlets,

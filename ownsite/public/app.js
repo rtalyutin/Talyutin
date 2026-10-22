@@ -1,4 +1,5 @@
 import { renderCatalogue, renderCase, canEmbed, liveUrlFor } from './registry.js';
+import { offlineWorks } from './offline-works.js';
 
 const $ = id => document.getElementById(id);
 const dialog = $('case-dialog');
@@ -20,7 +21,7 @@ function filterWorks() {
     if (!item.hidden) count++;
   });
   $('work-count').textContent = String(count).padStart(2, '0');
-  $('filter-status').textContent = worksUnavailable ? 'Портфолио временно недоступно' : `Показано работ: ${count}`;
+  $('filter-status').textContent = worksUnavailable ? `Избранные проекты: ${count}` : `Показано работ: ${count}`;
 }
 
 function updateCatalogue() {
@@ -56,6 +57,18 @@ function setAddress(slug, push) {
   history[push ? 'pushState' : 'replaceState'](null, '', url);
 }
 
+function showCase(slug) {
+  updateCatalogue();
+  const index = works.findIndex(work => work.slug === slug);
+  if (index === -1) { message('Работа недоступна', 'Она больше не опубликована. Другие работы — в каталоге.'); return; }
+  activeWork = works[index];
+  body.innerHTML = renderCase(activeWork);
+  body.scrollTop = 0;
+  $('case-index').textContent = `Работа ${String(index + 1).padStart(2, '0')} / ${String(works.length).padStart(2, '0')}`;
+  $('prev-case').disabled = works.length < 2;
+  $('next-case').disabled = works.length < 2;
+}
+
 async function openCase(slug, push = false) {
   stopRequest();
   resetScreen();
@@ -77,22 +90,14 @@ async function openCase(slug, push = false) {
     if (current !== revision || !dialog.open) return;
     works = fresh;
     worksUnavailable = false;
-    updateCatalogue();
-    const index = works.findIndex(work => work.slug === slug);
-    if (index === -1) { message('Работа недоступна', 'Она больше не опубликована. Другие работы — в каталоге.'); return; }
-    activeWork = works[index];
-    body.innerHTML = renderCase(activeWork);
-    body.scrollTop = 0;
-    $('case-index').textContent = `Работа ${String(index + 1).padStart(2, '0')} / ${String(works.length).padStart(2, '0')}`;
-    $('prev-case').disabled = works.length < 2;
-    $('next-case').disabled = works.length < 2;
+    showCase(slug);
     return current;
   } catch {
     if (current !== revision || !dialog.open) return;
-    works = [];
+    works = offlineWorks;
     worksUnavailable = true;
-    updateCatalogue();
-    message('Не удалось загрузить работу', 'Попробуйте открыть её снова чуть позже.');
+    showCase(slug);
+    return current;
   } finally {
     clearTimeout(timeout);
     if (current === revision) request = null;
@@ -116,7 +121,7 @@ async function refreshCatalogue() {
     updateCatalogue();
   } catch {
     if (current !== revision) return;
-    works = [];
+    works = offlineWorks;
     worksUnavailable = true;
     updateCatalogue();
   } finally {

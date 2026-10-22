@@ -53,7 +53,7 @@ test('malformed public response, private fields and executable links fail closed
   }
 });
 
-test('failed upstream preserves the homepage while data routes report 503', async t => {
+test('failed upstream shows three approved projects while data routes report 503', async t => {
   const remote = openRemotePortfolio('https://api.example.test/ownsite', { fetchImpl: async () => new Response('SECRET CONNECTION URL', { status: 503 }) });
   const server = createServer(createHandler(remote));
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -70,10 +70,17 @@ test('failed upstream preserves the homepage while data routes report 503', asyn
     assert.match(page.headers.get('content-type'), /text\/html/);
     const html = await page.text();
     for (const marker of ['ТАЛЮТИН', 'id="approach"', 'id="contact"', '/motion.js', 'mailto:info@yarcyberseason.ru', 'tel:+79065253445', 'https://vk.com/talyutin']) assert.ok(html.includes(marker), marker);
-    assert.match(html, /Портфолио временно недоступно/);
-    assert.match(html, /<template id="works-data" data-unavailable="true">\[\]<\/template>/);
-    assert.doesNotMatch(html, /class="project"|id="selected-case"|SECRET CONNECTION|api\.example\.test|Service unavailable|\{\{[A-Z_]+\}\}/);
+    assert.match(html, /Избранные проекты: 3/);
+    assert.match(html, /<template id="works-data" data-unavailable="true">/);
+    assert.deepEqual([...html.matchAll(/data-project="([^"]+)"/g)].map(match => match[1]), ['ycs', 'booking', 'tochki']);
+    assert.equal(html.includes('id="selected-case"'), path.includes('work=ycs'));
+    assert.doesNotMatch(html, /SECRET CONNECTION|api\.example\.test|Service unavailable|\{\{[A-Z_]+\}\}/);
   }
+  for (const [slug, target] of [['ycs', 'https://yarcyberseason.ru/'], ['booking', 'https://talyutin.online/'], ['tochki', '/tochki/']]) {
+    const html = await (await fetch(url + '/?work=' + slug)).text();
+    assert.ok(html.includes(`href="${target}"`));
+  }
+  assert.equal((await fetch(url + '/offline-works.js')).status, 200);
 });
 
 test('homepage isolates dependency failures, recovers and respects successful empty responses', async t => {
@@ -100,8 +107,8 @@ test('homepage isolates dependency failures, recovers and respects successful em
     assert.equal(page.status, 200);
     const html = await page.text();
     assert.equal(html.includes('data-unavailable="true"'), state.works === null);
-    assert.equal(html.includes('Портфолио временно недоступно'), state.works === null);
-    assert.equal(html.includes('class="project"'), Boolean(state.works?.length));
+    assert.equal(html.includes('Избранные проекты: 3'), state.works === null);
+    assert.equal(html.includes('class="project"'), state.works === null || Boolean(state.works?.length));
     assert.equal(html.includes('mailto:current@example.test'), Boolean(state.contacts?.length));
     assert.equal(html.includes('mailto:info@yarcyberseason.ru'), state.contacts === null);
     if (state.works?.length === 0) assert.match(html, /Работы скоро появятся/);

@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createContext, runInContext } from 'node:vm';
 import { renderCatalogue, renderCase, canEmbed, liveUrlFor } from '../public/registry.js';
+import { offlineWorks } from '../public/offline-works.js';
 
 // Exercise the shipped controller with an explicit DOM/network model. This is
 // not a browser renderer: iframe navigation, CSS, focus delivery and paint are
 // intentionally outside this test's claims.
 const source = readFileSync(new URL('../public/app.js', import.meta.url), 'utf8')
-  .replace(/^import .* from '\.\/registry\.js';\n/m, '');
+  .replace(/^import .* from '\.\/(?:registry|offline-works)\.js';\n/gm, '');
 const base = {
   slug: 'ycs', title: 'First work', category: 'Service', kind: 'it',
   summary: 'Summary', role: 'Role', status: 'Published', reveal: [], links: [],
@@ -114,7 +115,7 @@ function harness({ rows = [base, other], href = 'http://portfolio.test/', unavai
   const pending = [];
   const context = createContext({
     document, window, location, history, URL, AbortController,
-    renderCatalogue, renderCase, canEmbed, liveUrlFor,
+    renderCatalogue, renderCase, canEmbed, liveUrlFor, offlineWorks,
     setTimeout: fn => { const id = ++timerId; timers.set(id, fn); return id; },
     clearTimeout: id => timers.delete(id),
     fetch: (url, options) => new Promise((resolve, reject) => pending.push({ url, options, resolve, reject }))
@@ -239,7 +240,7 @@ test('a stale launch cannot resume after closing and reopening the same slug', a
   assert.equal(h.frame(), null, 'reopening a case is not consent to resume an abandoned launch');
 });
 
-test('network and malformed-list failures retain no active work or iframe', async t => {
+test('network and malformed-list failures use approved cards and replace the stale frame target', async t => {
   for (const [name, complete] of [
     ['HTTP failure', h => h.answer(1, [], false)],
     ['invalid list', h => h.answer(1, { records: [base] })],
@@ -248,10 +249,10 @@ test('network and malformed-list failures retain no active work or iframe', asyn
     await t.test(name, async () => {
       const h = harness(); await open(h);
       const done = h.launch(); complete(h); await done;
-      assert.equal(h.frame(), null);
-      assert.equal(h.state('activeWork'), null);
-      assert.match(h.element('case-body').querySelector('h2').textContent, /Не удалось/);
-      assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 0);
+      assert.equal(h.frame().src, 'https://yarcyberseason.ru/');
+      assert.equal(h.state('activeWork.slug'), 'ycs');
+      assert.equal(h.state('works.map(work => work.slug).join(",")'), 'ycs,booking,tochki');
+      assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 3);
       assert.equal(h.state('worksUnavailable'), true);
       assert.equal(h.timers.size, 0);
     });
@@ -298,12 +299,12 @@ test('hiding the page unloads an active iframe and rechecks publication when it 
 });
 
 test('the SSR unavailable flag survives filtering and clears when the page recovers', async () => {
-  const h = harness({ rows: [], unavailable: true });
+  const h = harness({ rows: offlineWorks, unavailable: true });
   h.filter('systems');
   assert.equal(h.state('worksUnavailable'), true);
-  assert.equal(h.element('filter-status').textContent, 'Портфолио временно недоступно');
+  assert.equal(h.element('filter-status').textContent, 'Избранные проекты: 0');
   assert.equal(h.element('work-count').textContent, '00');
-  assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 0);
+  assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 3);
 
   h.window.dispatch('pageshow', { persisted: true });
   h.answer(0, [base, { ...other, slug: 'dashboard' }]);
@@ -316,18 +317,18 @@ test('the SSR unavailable flag survives filtering and clears when the page recov
   assert.equal(h.frame(), null);
 });
 
-test('a failed catalogue refresh removes stale cards and filters keep the unavailable state', async () => {
+test('a failed catalogue refresh replaces stale cards with the three selected projects', async () => {
   const h = harness();
   assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 2);
   const refresh = h.refresh();
   h.answer(0, [], false); await refresh;
-  assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 0);
-  assert.equal(h.state('works.length'), 0);
-  assert.match(h.element('project-list').innerHTML, /Портфолио временно недоступно/);
-  for (const filter of ['product', 'experience', 'all']) {
+  assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 3);
+  assert.equal(h.state('works.map(work => work.slug).join(",")'), 'ycs,booking,tochki');
+  assert.doesNotMatch(h.element('project-list').innerHTML, /Second work/);
+  for (const [filter, count] of [['product', 2], ['experience', 1], ['all', 3]]) {
     h.filter(filter);
-    assert.equal(h.element('filter-status').textContent, 'Портфолио временно недоступно');
-    assert.equal(h.element('work-count').textContent, '00');
+    assert.equal(h.element('filter-status').textContent, `Избранные проекты: ${count}`);
+    assert.equal(h.element('work-count').textContent, String(count).padStart(2, '0'));
   }
   const recovery = h.refresh();
   h.answer(1, [other]); await recovery;
