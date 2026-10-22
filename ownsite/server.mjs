@@ -11,7 +11,7 @@ import { offlineWorks } from './public/offline-works.js';
 
 const root = resolve(import.meta.dirname, 'public');
 const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.txt': 'text/plain' };
-const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
+const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/metrika.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const php2shellFiles = new Set(['/php2shell', '/php2shell/styles.css', '/php2shell/app.js']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
@@ -100,13 +100,31 @@ async function renderIndex(url, database) {
   return readFileSync(join(root, 'index.html'), 'utf8').replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => values[key] ?? '');
 }
 
+const defaultCsp = "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; frame-src 'self' https://xn--90aiaibl0ahlel5n.xn--p1ai https://ycs.bar https://yarcyberseason.ru; connect-src 'self'; base-uri 'none'; object-src 'none'";
+// Exact Metrica hosts from https://yandex.ru/support/metrica/ru/code/install-counter-csp.
+const metrikaHosts = [
+  'mc.yandex.ru', 'mc.yandex.az', 'mc.yandex.by', 'mc.yandex.co.il',
+  'mc.yandex.com', 'mc.yandex.com.am', 'mc.yandex.com.ge', 'mc.yandex.com.tr',
+  'mc.yandex.ee', 'mc.yandex.fr', 'mc.yandex.kg', 'mc.yandex.kz',
+  'mc.yandex.lt', 'mc.yandex.lv', 'mc.yandex.md', 'mc.yandex.tj',
+  'mc.yandex.tm', 'mc.yandex.uz', 'mc.webvisor.com', 'mc.webvisor.org'
+];
+const metrikaHttps = metrikaHosts.map(host => `https://${host}`).join(' ');
+const metrikaWss = metrikaHosts.map(host => `wss://${host}`).join(' ');
+const portfolioCsp = defaultCsp
+  .replace("img-src 'self' data:", `img-src 'self' data: ${metrikaHttps}`)
+  .replace("script-src 'self'", `script-src 'self' ${metrikaHttps} https://yastatic.net`)
+  .replace("frame-src 'self'", `frame-src 'self' blob: ${metrikaHttps}`)
+  .replace("connect-src 'self'", `connect-src 'self' ${metrikaHttps} ${metrikaWss}`)
+  + `; child-src 'self' blob: ${metrikaHttps}`;
+
 function send(res, code, type, body, extra = {}) {
   res.writeHead(code, {
     'Content-Type': (type === 'model/gltf-binary' ? type : `${type}; charset=utf-8`),
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; frame-src 'self' https://xn--90aiaibl0ahlel5n.xn--p1ai https://ycs.bar https://yarcyberseason.ru; connect-src 'self'; base-uri 'none'; object-src 'none'",
+    'Content-Security-Policy': defaultCsp,
     ...extra
   });
   res.end(body);
@@ -152,7 +170,7 @@ async function handle(req, res, database) {
     return work ? send(res, 200, 'application/json', JSON.stringify(work)) : send(res, 404, 'application/json', '{"error":"Not found"}');
   }
   if (url.pathname === '/robots.txt') return send(res, 200, 'text/plain', process.env.ALLOW_INDEXING === '1' ? 'User-agent: *\nAllow: /\n' : 'User-agent: *\nDisallow: /\n');
-  if (url.pathname === '/' || url.pathname === '/index.html') return send(res, 200, 'text/html', await renderIndex(url, database));
+  if (url.pathname === '/' || url.pathname === '/index.html') return send(res, 200, 'text/html', await renderIndex(url, database), { 'Content-Security-Policy': portfolioCsp });
   if (staticFiles.has(url.pathname) || url.pathname.startsWith('/assets/')) {
     if (plannerFiles.has(url.pathname) && !(await getWorks(database)).some(work => work.slug === 'ycs')) {
       return send(res, 404, 'text/plain', 'Not found');
