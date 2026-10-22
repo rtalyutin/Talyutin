@@ -12,6 +12,7 @@ import { offlineWorks } from './public/offline-works.js';
 const root = resolve(import.meta.dirname, 'public');
 const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.txt': 'text/plain' };
 const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
+const php2shellFiles = new Set(['/php2shell', '/php2shell/styles.css', '/php2shell/app.js']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
@@ -126,6 +127,12 @@ async function handle(req, res, database) {
   if (url.pathname === '/healthz') {
     return send(res, 200, 'text/plain', 'OK');
   }
+  if (url.pathname === '/php2shell/' || url.pathname === '/php2shell/index.html') return send(res, 308, 'text/plain', 'Moved', { Location: '/php2shell' });
+  if (php2shellFiles.has(url.pathname)) {
+    const path = url.pathname === '/php2shell' ? '/php2shell/index.html' : url.pathname;
+    try { return send(res, 200, mime[extname(path)], readFileSync(resolve(root, '.' + path))); }
+    catch { return send(res, 404, 'text/plain', 'Not found'); }
+  }
   if (url.pathname === '/tochki') return send(res, 308, 'text/plain', 'Moved', { Location: '/tochki/' });
   if (tochkiFiles.has(url.pathname)) {
     const path = url.pathname === '/tochki/' ? '/tochki/index.html' : url.pathname;
@@ -184,3 +191,4 @@ async function start() {
 if (process.argv[1] && resolve(process.argv[1]) === resolve(import.meta.filename)) {
   start().catch(() => { process.stderr.write('Portfolio startup failed: check database configuration\n'); process.exitCode = 1; });
 }
+
