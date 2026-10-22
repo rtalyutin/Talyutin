@@ -1,129 +1,63 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Роман Талютин — {{TITLE}} / Работы в действии</title>
-  <meta name="description" content="Реальные ИТ-продукты и авторские работы Романа Талютина. Посмотрите действующие инструменты и разбор решений.">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/styles.css">
-  <script type="module" src="/app.js"></script>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Разработка сервисов, автоматизация и интеграции. Задачи, решения и проекты Романа Талютина.">
+<title>{{PAGE_TITLE}}</title>
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 </head>
-<body data-theme="{{THEME}}" data-mode="{{MODE}}" data-orientation="{{ORIENTATION}}">
-  <a class="skip" href="#work-content">К содержанию</a>
-  <header class="masthead">
-    <a class="brand" href="/">РОМАН ТАЛЮТИН</a>
-    <span class="brand-line">Продукты. Системы. Истории.</span>
-    <nav aria-label="Основная навигация">
-      <a href="#works">Все работы</a>
-      <a href="#contact">Контакт</a>
-    </nav>
-  </header>
-
-  <main id="work-content" tabindex="-1">
-    <section class="hero" aria-labelledby="manifesto">
-      <div class="scene-texture" aria-hidden="true"></div>
-      <div class="hero-grid">
-        <div class="manifesto">
-          <p class="eyebrow">Работы в действии / Россия</p>
-          <h1 id="manifesto">ПОСТОРОННИМ<br>МОЖНО<span>.</span></h1>
-          <p class="manifesto-intro">Я открываю работы, а не коллекцию обложек. Смотрите, как они устроены и что уже работает.</p>
-          <p class="manifesto-caption">Понятную ИТ-задачу можно довести до запуска. С неопределённой — сначала разобраться, что стоит строить.</p>
-        </div>
-
-        <div class="stage" aria-label="Интерактивная модель устройства">
-          <div class="stage-mark stage-mark-top">ОТКРЫТЫЙ ДОСТУП / {{CATEGORY}}</div>
-          <div class="device-space">
-            <div class="device" id="device" style="--rx:-5deg;--ry:-15deg" aria-label="Вращаемая 3D-модель телефона">
-              <div class="device-grip" id="device-grip" aria-label="Потяните за рамку, чтобы повернуть модель"></div>
-              <div class="face front">
-                <div class="device-screen" id="device-screen">
-                  <div class="screen-viewport" id="screen-viewport">
-                    <div class="screen-placeholder" id="screen-placeholder" aria-hidden="true">
-                      <span id="screen-placeholder-category">{{CATEGORY}}</span>
-                      <strong id="screen-placeholder-title">{{DISPLAY_TITLE}}</strong>
-                      <small id="screen-placeholder-caption">{{SCREEN_CAPTION}}</small>
-                    </div>
-                    <img id="screen-poster" src="{{POSTER}}" alt="Кадр работы {{TITLE}}" {{POSTER_HIDDEN}}>
-                    <button class="activate" id="activate-screen" type="button" {{ACTIVATE_HIDDEN}}><span id="activate-label">{{ACTIVATE_LABEL}}</span><span aria-hidden="true">↗</span></button>
-                  </div>
-                </div>
-                <span class="camera" aria-hidden="true"></span>
-              </div>
-              <div class="face back"><span class="back-stamp">RT / WORKS</span></div>
-              <div class="face side left"></div><div class="face side right"></div>
-              <div class="face edge top"></div><div class="face edge bottom"></div>
-            </div>
-          </div>
-          <div class="model-controls" aria-label="Управление моделью">
-            <button type="button" data-rotate="left" aria-label="Повернуть влево">←</button>
-            <button type="button" data-rotate="right" aria-label="Повернуть вправо">→</button>
-            <button type="button" data-rotate="reset" aria-label="Сбросить поворот">↺</button>
-          </div>
-          <span class="stage-mark stage-mark-bottom">{{STAGE_CAPTION}}</span>
-        </div>
-
-        <div class="case-panel" id="case-panel">
-          <div class="case-topline"><span id="case-number">{{CASE_INDEX}}</span><span id="case-category">{{CATEGORY}}</span></div>
-          <div class="case-view">
-            <h2 id="case-title" aria-label="{{TITLE}}">{{DISPLAY_TITLE}}</h2>
-            <p class="case-summary" id="case-summary">{{SUMMARY}}</p>
-            <p class="case-role" id="case-role">{{ROLE}}</p>
-            <span class="case-status" id="case-status">{{STATUS}}</span>
-          </div>
-          <div class="case-reveal" id="case-reveal">
-            <h2>Что за решением</h2>
-            <div class="reveal-body" id="reveal-body">{{REVEAL}}</div>
-          </div>
-          <div class="case-actions" aria-label="Режим просмотра">
-            <a href="/?mode=view" id="view-action" data-mode-link="view">Посмотреть <span aria-hidden="true">—</span></a>
-            <a href="/?mode=reveal" id="reveal-action" data-mode-link="reveal">Раскрыть решение <span aria-hidden="true">—</span></a>
-          </div>
-          <div class="external-links" id="external-links">{{EXTERNAL_LINKS}}</div>
-        </div>
-      </div>
-
-      <div class="hero-footer">
-        <nav class="case-switcher" aria-label="Выбрать работу">
-          <span class="switch-line" aria-hidden="true"></span>
-          <span class="count" id="case-count">{{CASE_INDEX}} / {{CASE_COUNT}}</span>
-          <ol id="case-list">{{ENTRIES}}</ol>
-        </nav>
-        <div class="two-routes">
-          <a href="#contact" data-route="clear">У меня понятная задача <span aria-hidden="true">↗</span></a>
-          <a href="#contact" data-route="uncertain">Нужно разобраться, что делать <span aria-hidden="true">↗</span></a>
-        </div>
-      </div>
-      <p class="sr-only" id="case-announcement" aria-live="polite"></p>
-    </section>
-
-    <section class="works-section" id="works" aria-labelledby="works-title">
-      <div class="section-heading registry-heading" data-reveal><span>РЕЕСТР / 01</span><h2 id="works-title">Всё, что<br>можно открыть</h2><p>Выберите работу, чтобы<br class="desktop-break"> увидеть решение.</p></div>
-      <div class="work-list" id="work-list" data-reveal>{{CATALOGUE}}</div>
-    </section>
-
-    <section class="approach-section" aria-labelledby="approach-title">
-      <div class="approach-paper" aria-hidden="true"></div>
-      <div class="section-heading" data-reveal><span>ПРОЦЕСС / 02</span><h2 id="approach-title">Две точки входа</h2></div>
-      <div class="approach-grid">
-        <article class="approach-route" data-reveal><span><b>01 /</b> ЕСТЬ ЗАДАЧА</span><h3>Нужно<br>сделать</h3><p>Покажите результат, который должен заработать, и то, что уже есть. Я помогу определить состав, срок и стоимость после разбора задачи.</p><a class="route-link route-link-clear" href="#contact" data-route="clear">У меня понятная задача <span class="arrow" aria-hidden="true">↗</span></a></article>
-        <article class="approach-route" data-reveal><span><b>02 /</b> МНОГО НЕИЗВЕСТНОГО</span><h3>Нужно<br>понять</h3><p>Начнём с ситуации и самого рискованного вопроса. Первая проверка может привести к разработке, уточнению или решению <span class="ink-underline">не строить лишнего.</span></p><a class="route-link" href="#contact" data-route="uncertain">Нужно разобраться, что делать <span class="arrow" aria-hidden="true">↗</span></a></article>
-      </div>
-    </section>
-
-    <section class="contact-section" id="contact" aria-labelledby="contact-title">
-      <div class="contact-seam" aria-hidden="true"></div>
-      <div class="contact-heading" data-reveal>
-        <span class="contact-eyebrow">СВЯЗЬ / 03</span>
-        <h2 id="contact-title"><span>Задача может быть</span><br><span class="ink-underline">не до конца ясной.</span></h2>
-        <p>Обсудим её в переписке или по телефону. Сайт не собирает ваши контакты и не сохраняет сообщения.</p>
-      </div>
-      <p class="contact-intent" id="contact-intent" aria-live="polite" hidden></p>
-      <div class="contact-outlets" id="contact-outlets" data-reveal>
-        {{CONTACT_OUTLETS}}
-      </div>
-    </section>
-  </main>
-  <footer class="site-footer"><span>РОМАН ТАЛЮТИН / 2026</span><a href="#manifesto">Наверх <span class="arrow" aria-hidden="true">↑</span></a></footer>
+<body>
+<a class="skip" href="#main">К содержанию</a>
+<div class="shell" id="top">
+<header class="topbar"><a class="identity" href="#top">Роман Талютин<span>Разработка и решения</span></a><nav class="nav" aria-label="Основная навигация"><a href="#works">Работы</a><a class="process-nav" href="#approach">Подход</a><a class="contact-link" href="#contact">Обсудить задачу <b aria-hidden="true">↗</b></a></nav></header>
+<main id="main" tabindex="-1">
+<section class="hero" aria-labelledby="hero-title">
+<div class="reference-scene">
+<div class="reference-art" aria-hidden="true" aria-label="ТАЛЮТИН">
+  <span class="draw red bar-red"></span>
+  <span class="draw ink bar-black"></span>
+  <span class="draw hatch bar-blue"></span>
+  <span class="draw red t-red"></span>
+  <span class="draw ink letter-t"></span>
+  <span class="draw ink letter-a"></span>
+  <span class="draw paper a-counter"></span>
+  <span class="draw hatch a-hatch"></span>
+  <span class="draw ink letter-l-diagonal"></span>
+  <span class="draw red l-red"></span>
+  <span class="draw ink letter-l-stem"></span>
+  <span class="draw red l-bottom"></span>
+  <span class="draw ink letter-yu-stem"></span>
+  <span class="draw ink letter-yu-cross"></span>
+  <span class="draw red red-center"></span>
+  <span class="draw hatch blue-center"></span>
+  <span class="draw ink letter-t-bottom"></span>
+  <span class="draw hatch blue-bottom"></span>
+  <span class="draw ink letter-i"></span>
+  <span class="draw red i-red"></span>
+  <span class="draw ink letter-n-left"></span>
+  <span class="draw red red-right"></span>
+  <span class="draw hatch blue-right"></span>
+  <span class="draw red red-right-bottom"></span>
+  <span class="draw ink letter-n-right"></span>
+  <span class="draw paper fine-diagonal"></span>
+  <span class="yu-ring ink"><i class="yu-counter"></i></span>
+  <span class="name-lane lane-center"><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b></span>
+  <span class="name-lane lane-right"><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b><b>ТАЛЮТИН</b></span>
+</div>
+<div class="hero-copy"><h1 id="hero-title">Разработка<br>и решение задач</h1><p class="intro">Сервисы, автоматизация, интеграции<br>и инструменты для работы.</p><a class="work-link" href="#works">Посмотреть работы <span aria-hidden="true">↓</span></a><span class="location">Ярославль · работаю удалённо</span></div>
+</div>
+</section>
+<div class="crossbar"><p>Разные задачи. Один принцип: довести до действия.</p><span class="index mono">Далее / выбранные работы ↓</span></div>
+<section id="works" class="works" aria-labelledby="works-title"><div class="section-top"><h2 class="section-heading" id="works-title">Работы<sup id="work-count">{{CASE_COUNT}}</sup></h2><p class="section-note">Что требовалось сделать,<br>какой ход выбран и что получилось.</p></div><div class="filters" role="group" aria-label="Фильтр работ"><button class="filter" data-filter="all" aria-pressed="true">Все работы</button><button class="filter" data-filter="product" aria-pressed="false">Сервисы</button><button class="filter" data-filter="systems" aria-pressed="false">Интеграции</button><button class="filter" data-filter="experience" aria-pressed="false">Игры и истории</button></div>
+<div id="project-list">{{CATALOGUE}}</div><div class="work-end"><span id="filter-status" role="status" aria-live="polite">Показано работ: {{CASE_TOTAL}}</span><span>У каждого проекта — свой разбор.</span></div></section>
+{{SELECTED_CASE}}
+<section class="about-work" id="approach" aria-labelledby="approach-title"><p class="about-label mono" id="approach-title">Как строится работа<br>01 / 02 / 03</p><div class="about-content"><p>Можно прийти с готовым ТЗ.<br>Можно — с фразой<br>«вот здесь всё неудобно».</p><div class="steps"><div class="step"><span>01</span><h3>Разобраться</h3><p>Что мешает сейчас, кому нужен результат и какие есть ограничения.</p></div><div class="step"><span>02</span><h3>Собрать решение</h3><p>Выбрать подход, связать части и показать первый рабочий сценарий.</p></div><div class="step"><span>03</span><h3>Проверить в деле</h3><p>Пройти реальную задачу и сверить результат с тем, ради чего всё началось.</p></div></div></div></section>
+</main></div>
+<section class="contact" id="contact" aria-labelledby="contact-title"><div class="contact-inner"><p class="mono">Следующая задача — ваша</p><div class="contact-main"><div><h2 id="contact-title">Расскажите,<br>что нужно<br><em>сделать.</em></h2><p class="contact-p">Для начала хватит нескольких предложений.</p>{{CONTACT_CTA}}</div><div class="contact-options">{{CONTACT_OUTLETS}}</div></div><footer class="footer"><span>Роман Талютин · Разработка и решение задач</span><span class="footer-location">Ярославль / удалённо</span><a href="#top">Наверх ↑</a></footer></div></section>
+<template id="works-data">{{WORKS_JSON}}</template>
+<dialog id="case-dialog" aria-labelledby="case-title"><div class="dialog-inner"><header class="case-header"><span class="mono" id="case-index"></span><button class="close" id="close-case" autofocus>Закрыть ×</button></header><div class="case-body" id="case-body"></div><footer class="case-nav"><button id="prev-case">← Предыдущая работа</button><button id="next-case">Следующая работа →</button></footer></div></dialog>
+<script src="/motion.js" defer></script>
+<script src="/app.js" type="module"></script>
 </body>
 </html>

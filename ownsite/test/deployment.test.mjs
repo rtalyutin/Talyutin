@@ -56,7 +56,7 @@ test('private records stay out of API, HTML, and direct routes; both YCS tools s
     assert.equal(html.includes('Недетские сказки'), false);
     assert.equal(html.includes('ЯКС'), true);
     const siteHtml = await (await fetch(`${origin}/?work=ycs&tool=site`)).text();
-    assert.equal(siteHtml.includes('data-orientation="landscape"'), true);
+    assert.equal(siteHtml.includes('class="reference-scene"'), true);
     assert.equal(siteHtml.includes('/assets/ycs-backdrop.jpg'), true);
     assert.match(siteHtml, /href="https:\/\/xn--90aiaibl0ahlel5n\.xn--p1ai\/" target="_blank"/);
     assert.equal((await fetch(`${origin}/tool.html`)).status, 200);

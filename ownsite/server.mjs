@@ -6,12 +6,11 @@ import { openDatabase, publicWorks, publicWork, publicContacts } from './db.mjs'
 import { openPostgres } from './pg-db.mjs';
 import { seedWorks } from './seed-works.mjs';
 import { openRemotePortfolio } from './remote-db.mjs';
-import { renderCatalogue } from './public/registry.js';
+import { renderCatalogue, renderCase } from './public/registry.js';
 
 const root = resolve(import.meta.dirname, 'public');
-const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.glb': 'model/gltf-binary', '.txt': 'text/plain' };
-const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/motion.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css', '/phone-viewer.js', '/phone-viewer.js.LEGAL.txt']);
-const sharedAssets = new Set(['/assets/torn-paper.jpg', '/assets/tear.webp', '/assets/rt-phone.glb']);
+const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.txt': 'text/plain' };
+const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/motion.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
@@ -42,13 +41,6 @@ function readTochkiFile(path) {
   return readFileSync(resolve(root, '.' + path));
 }
 
-function safeLiveUrl(value) {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' ? url.href : null;
-  } catch { return null; }
-}
-
 export function escapeHtml(v) {
   return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c]);
 }
@@ -66,46 +58,27 @@ async function getContacts(database) {
 async function renderIndex(url, database) {
   const works = await getWorks(database);
   const requested = url.searchParams.get('work');
-  const chosen = works.find(w => w.slug === requested) ?? works[0];
-  const mode = url.searchParams.get('mode') === 'reveal' ? 'reveal' : 'view';
-  const title = chosen?.title ?? 'Работы в действии';
-  const category = chosen?.category ?? 'Портфолио';
-  const reveal = chosen?.reveal?.map(part => `<div class="reveal-item"><span>${escapeHtml(part.heading)}</span><p>${escapeHtml(part.body)}</p></div>`).join('') ?? '';
-  const entries = works.map((w, i) => `<li><a href="/?work=${encodeURIComponent(w.slug)}&mode=${mode}" data-work="${escapeHtml(w.slug)}" ${w.slug === chosen?.slug ? 'aria-current="true"' : ''}><span>${String(i + 1).padStart(2, '0')}</span><strong>${escapeHtml(w.category)}</strong><small>${escapeHtml(w.title)}</small></a></li>`).join('');
-  const catalogue = renderCatalogue(works, chosen?.slug);
-  const workLinks = (chosen?.links?.length ? chosen.links : chosen?.liveUrl ? [{ label: 'Открыть действующий инструмент', href: chosen.liveUrl }] : [])
-    .map(link => `<a href="${escapeHtml(link.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link.label)} ↗</a>`).join('');
+  const chosen = works.find(work => work.slug === requested);
   const contacts = await getContacts(database);
-  const outlets = contacts.length ? contacts.map(link => {
+  const outlets = contacts.map(link => {
     const kind = link.href.startsWith('tel:') ? 'phone' : link.href.startsWith('mailto:') ? 'email' : 'external';
-    let value = link.href.replace(/^(tel:|mailto:)/, '').split('?')[0];
+    let value = kind === 'external' ? link.label : link.href.replace(/^(tel:|mailto:)/, '').split('?')[0];
     if (kind === 'phone') value = value.replace(/^\+7(\d{3})(\d{3})(\d{2})(\d{2})$/, '+7 $1 $2-$3-$4');
-    return `<a class="contact-ticket" data-contact="${kind}" href="${escapeHtml(link.href)}" ${link.href.startsWith('https:') ? 'target="_blank" rel="noopener noreferrer"' : ''}><span class="contact-label">${escapeHtml(link.label)} <span class="arrow" aria-hidden="true">↗</span></span><span class="contact-value">${escapeHtml(value)}</span></a>`;
-  }).join('') : '<span class="contact-pending">Публичные адреса для связи будут добавлены в финальную сборку.</span>';
-  return readFileSync(join(root, 'index.html'), 'utf8')
-    .replaceAll('{{TITLE}}', escapeHtml(title))
-    .replaceAll('{{DISPLAY_TITLE}}', escapeHtml(chosen?.displayTitle ?? title))
-    .replaceAll('{{CATEGORY}}', escapeHtml(category))
-    .replaceAll('{{SUMMARY}}', escapeHtml(chosen?.summary ?? 'Реальные работы и решения.'))
-    .replaceAll('{{ROLE}}', escapeHtml(chosen?.role ?? ''))
-    .replaceAll('{{STATUS}}', escapeHtml(chosen?.status ?? ''))
-    .replaceAll('{{LIVE_URL}}', escapeHtml(safeLiveUrl(chosen?.liveUrl) ?? '#works'))
-    .replaceAll('{{POSTER}}', escapeHtml(chosen?.poster ?? ''))
-    .replaceAll('{{POSTER_HIDDEN}}', chosen?.poster ? '' : 'hidden')
-    .replaceAll('{{ACTIVATE_LABEL}}', chosen?.embedAllowed ? 'Открыть живой экран' : 'Открыть в новой вкладке')
-    .replaceAll('{{ACTIVATE_HIDDEN}}', chosen?.liveUrl ? '' : 'hidden')
-    .replaceAll('{{SCREEN_CAPTION}}', chosen?.liveUrl ? 'Инструмент доступен по ссылке' : 'Материалы проекта · статус указан в карточке')
-    .replaceAll('{{STAGE_CAPTION}}', chosen?.liveUrl ? 'ТЕЛЕФОН / 3D · ЭКРАН / ИНСТРУМЕНТ' : 'ТЕЛЕФОН / 3D · ЭКРАН / МАТЕРИАЛЫ ПРОЕКТА')
-    .replaceAll('{{EXTERNAL_LINKS}}', workLinks)
-    .replaceAll('{{REVEAL}}', reveal)
-    .replaceAll('{{ENTRIES}}', entries)
-    .replaceAll('{{CATALOGUE}}', catalogue)
-    .replaceAll('{{CONTACT_OUTLETS}}', outlets)
-    .replaceAll('{{CASE_COUNT}}', String(works.length).padStart(2, '0'))
-    .replaceAll('{{CASE_INDEX}}', String(Math.max(works.findIndex(w => w.slug === chosen?.slug), 0) + 1).padStart(2, '0'))
-    .replaceAll('{{MODE}}', mode)
-    .replaceAll('{{THEME}}', escapeHtml(chosen?.theme ?? 'neutral'))
-    .replaceAll('{{ORIENTATION}}', escapeHtml(chosen?.orientation ?? 'portrait'));
+    return `<a data-contact="${kind}" href="${escapeHtml(link.href)}" ${kind === 'external' ? 'target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(value)} <span aria-hidden="true">↗</span></a>`;
+  }).join('') || '<p class="contact-p">Контакты скоро появятся.</p>';
+  const primary = contacts.find(link => link.href.startsWith('mailto:')) ?? contacts[0];
+  const values = {
+    PAGE_TITLE: escapeHtml(chosen ? `${chosen.title} · Роман Талютин` : 'Задача → решение · Роман Талютин'),
+    CATALOGUE: renderCatalogue(works, chosen?.slug) || '<p class="catalogue-empty">Работы скоро появятся.</p>',
+    CASE_COUNT: String(works.length).padStart(2, '0'),
+    CASE_TOTAL: String(works.length),
+    SELECTED_CASE: chosen ? `<section class="case-fallback" id="selected-case" aria-labelledby="selected-case-title">${renderCase(chosen, { titleId: 'selected-case-title' })}<a class="case-fallback-close" href="/#works">← Все работы</a></section>` : '',
+    CONTACT_CTA: primary ? `<a class="email-cta" href="${escapeHtml(primary.href)}">${primary.href.startsWith('tel:') ? 'Позвонить' : 'Написать о задаче'} <b aria-hidden="true">↗</b></a>` : '',
+    CONTACT_OUTLETS: outlets,
+    WORKS_JSON: escapeHtml(JSON.stringify(works))
+  };
+  // One pass: editorial content cannot inject another template replacement.
+  return readFileSync(join(root, 'index.html'), 'utf8').replace(/\{\{([A-Z_]+)\}\}/g, (_, key) => values[key] ?? '');
 }
 
 function send(res, code, type, body, extra = {}) {
@@ -114,7 +87,7 @@ function send(res, code, type, body, extra = {}) {
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; frame-src 'self' https://xn--90aiaibl0ahlel5n.xn--p1ai https://ycs.bar; connect-src 'self'; base-uri 'none'; object-src 'none'",
+    'Content-Security-Policy': "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; frame-src 'self' https://xn--90aiaibl0ahlel5n.xn--p1ai https://ycs.bar https://yarcyberseason.ru; connect-src 'self'; base-uri 'none'; object-src 'none'",
     ...extra
   });
   res.end(body);
@@ -159,7 +132,7 @@ async function handle(req, res, database) {
     if (plannerFiles.has(url.pathname) && !(await getWorks(database)).some(work => work.slug === 'ycs')) {
       return send(res, 404, 'text/plain', 'Not found');
     }
-    if (url.pathname.startsWith('/assets/') && !sharedAssets.has(url.pathname)) {
+    if (url.pathname.startsWith('/assets/')) {
       const works = await getWorks(database);
       if (!works.some(work => work.poster === url.pathname || work.tools?.some(tool => tool.poster === url.pathname))) {
         return send(res, 404, 'text/plain', 'Not found');

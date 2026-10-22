@@ -12,7 +12,7 @@ test('catalogue keeps hostile editorial text inside one non-executable link', ()
   assert.equal((html.match(/aria-current="true"/g) ?? []).length, 1);
   assert.doesNotMatch(html, /<script|<img| onclick="/);
   assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
-  assert.ok(html.includes(`/?work=${encodeURIComponent(slug)}&amp;mode=reveal#manifesto`));
+  assert.ok(html.includes(`/?work=${encodeURIComponent(slug)}&amp;mode=reveal#works`));
   assert.equal(renderCatalogue([]), '');
 });
 
@@ -31,9 +31,9 @@ test('SSR and client use the same catalogue without widening publication or losi
       assert.equal(works.length, expectedCount);
       const html = await (await fetch(`${origin}/?work=dashboard&mode=reveal`)).text();
       assert.ok(html.includes(renderCatalogue(works, works.find(work => work.slug === 'dashboard')?.slug)));
-      assert.equal((html.match(/class="ticket-link"/g) ?? []).length, expectedCount);
-      assert.match(html, /class="contact-ticket" data-contact="phone" href="tel:\+79065253445"/);
-      assert.match(html, /class="contact-ticket" data-contact="email" href="mailto:info@yarcyberseason\.ru"/);
+      assert.equal((html.match(/class="project"/g) ?? []).length, expectedCount);
+      assert.match(html, /data-contact="phone" href="tel:\+79065253445"/);
+      assert.match(html, /data-contact="email" href="mailto:info@yarcyberseason\.ru"/);
     }
     for (const module of ['/registry.js', '/motion.js']) {
       const response = await fetch(origin + module);

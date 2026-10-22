@@ -1,28 +1,43 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { createServer } from 'node:http';
+import { createHandler } from '../server.mjs';
+import { openDatabase } from '../db.mjs';
 
-const root = resolve(import.meta.dirname, '..');
-const html = readFileSync(resolve(root, 'public/index.html'), 'utf8');
-const css = readFileSync(resolve(root, 'public/styles.css'), 'utf8');
-const app = readFileSync(resolve(root, 'public/app.js'), 'utf8');
+const html = readFileSync(new URL('../public/index.html', import.meta.url), 'utf8');
+const css = readFileSync(new URL('../public/styles.css', import.meta.url), 'utf8');
 
-test('page keeps a keyboard skip target and contains no visitor data form', () => {
-  assert.match(html, /class="skip" href="#work-content"/);
-  assert.match(html, /<main id="work-content" tabindex="-1">/);
-  assert.doesNotMatch(html, /<(form|input|textarea|select)\b/i);
-});
-
-test('reduced-motion rules cover CSS transitions and scripted catalogue scrolling', () => {
+test('CSS surname homepage has accessible content and no graphic or inline executable assets', () => {
+  assert.match(html, /class="skip" href="#main"/);
+  assert.match(html, /<main id="main" tabindex="-1">/);
+  assert.match(html, /aria-label="ТАЛЮТИН"/);
+  assert.doesNotMatch(html, /<(form|input|textarea|select|img|svg|canvas|style)\b/i);
+  assert.doesNotMatch(html, /<script(?![^>]*\bsrc=)|\sstyle=|\son\w+=|preview-chip/i);
+  assert.doesNotMatch(css, /url\(|@import/i);
   assert.match(css, /@media\(prefers-reduced-motion:reduce\)/);
   assert.match(css, /scroll-behavior:auto/);
-  assert.match(css, /transition-duration:\.01ms!important/);
-  assert.match(app, /prefers-reduced-motion: reduce/);
-  assert.match(app, /'instant' : 'smooth'/);
+  assert.match(css, /animation:none!important;transition:none!important/);
 });
 
-test('tablet layout switches to the readable single-column composition', () => {
-  assert.match(css, /@media\(max-width:820px\)/);
-  assert.match(css, /\.hero-grid\{display:flex;flex-direction:column/);
+test('homepage serves its modules under strict CSP, drops phone routes and keeps deep links', async t => {
+  const db = openDatabase(':memory:');
+  const server = createServer(createHandler(db));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(async () => { await new Promise(resolve => server.close(resolve)); db.close(); });
+  const origin = `http://127.0.0.1:${server.address().port}`;
+  const response = await fetch(origin + '/?work=dashboard&mode=reveal');
+  const page = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(response.headers.get('content-security-policy'), /script-src 'self';/);
+  assert.doesNotMatch(response.headers.get('content-security-policy'), /unsafe-inline|unsafe-eval/);
+  assert.match(page, /id="selected-case-title">Dashboard/);
+  assert.match(page, /Публичная демо-проекция работает/);
+  assert.doesNotMatch(page, /\{\{[A-Z_]+\}\}|phone-viewer|МАКЕТ \/ HTML/);
+  for (const asset of ['/app.js', '/registry.js', '/motion.js', '/styles.css', '/tool.html']) {
+    assert.equal((await fetch(origin + asset)).status, 200, asset);
+  }
+  for (const asset of ['/phone-viewer.js', '/phone-viewer.js.LEGAL.txt', '/assets/rt-phone.glb', '/assets/torn-paper.jpg']) {
+    assert.equal((await fetch(origin + asset)).status, 404, asset);
+  }
 });
