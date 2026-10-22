@@ -17,7 +17,7 @@ function invalidateRequest() {
   $('request-result').hidden = true;
   $('request-text').value = '';
   $('request-status').textContent = '';
-  $('email-request').href = 'mailto:Rtalyutin@gmail.com';
+  $('email-request').href = 'mailto:R.talyutin@gmail.com';
 }
 $('request-form').addEventListener('input', invalidateRequest);
 $('request-form').addEventListener('change', invalidateRequest);
@@ -44,7 +44,7 @@ $('request-form').addEventListener('submit', (event) => {
   if ($('details').value.trim()) lines.push('Дополнительно: ' + $('details').value.trim());
   lines.push(incident ? 'Прошу отдельно оценить расследование, восстановление и обновление PHP.' : 'Прошу проверить применимость исправления, согласовать объём, стоимость, окно работ и проверки после обновления.');
   $('request-text').value = lines.join('\n');
-  $('email-request').href = 'mailto:Rtalyutin@gmail.com?subject=' + encodeURIComponent(incident ? 'Разбор подозрения на взлом сайта' : 'Внедрение патча PHP2Shell') + '&body=' + encodeURIComponent($('request-text').value);
+  $('email-request').href = 'mailto:R.talyutin@gmail.com?subject=' + encodeURIComponent(incident ? 'Разбор подозрения на взлом сайта' : 'Внедрение патча PHP2Shell') + '&body=' + encodeURIComponent($('request-text').value);
   $('request-status').textContent = '';
   $('request-result').hidden = false;
   $('result-title').focus({preventScroll:true});
