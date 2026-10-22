@@ -32,7 +32,7 @@ test('PostgreSQL constructor → mounted Tg-mcp HTTP → frontend SSR and revoca
   let page = await fetch(origin+'/?work=ycs');
   assert.equal(page.status,200);
   let html = await page.text();
-  assert.match(html,/ЯрКиберСезон/);assert.match(html,/tel:\+79065253445/);assert.match(html,/mailto:info@yarcyberseason.ru/);
+  assert.match(html,/ЯрКиберСезон/);assert.match(html,/tel:\+79065253445/);assert.match(html,/mailto:r\.talyutin@gmail\.com/);
   assert.doesNotMatch(html,/\{\{[A-Z_]+\}\}|Недетские сказки/);
   await ownsite.callTool('ownsite_update_work',{id:'ycs',patch:{show:false,summary:'PRIVATE MARKER'}},owner);
   for (const path of ['/api/works/ycs','/assets/ycs-backdrop.jpg','/tool.html']) assert.equal((await fetch(origin+path)).status,404);
@@ -44,5 +44,5 @@ test('PostgreSQL constructor → mounted Tg-mcp HTTP → frontend SSR and revoca
   assert.equal((await fetch(origin+'/healthz')).status,200);
   assert.equal((await fetch(origin+'/readyz')).status,503);
   page = await fetch(origin+'/');assert.equal(page.status,200);
-  assert.match(await page.text(),/Портфолио временно недоступно/);
+  assert.match(await page.text(),/Избранные проекты: 3/);
 });

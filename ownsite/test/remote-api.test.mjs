@@ -29,7 +29,8 @@ test('remote API preserves two cards and SSR, same-origin JSON and contacts', as
   const html = await page.text();
   assert.match(html, /Открыть в новой вкладке/);
   assert.match(html, /tel:\+79065253445/);
-  assert.match(html, /mailto:info@yarcyberseason.ru/);
+  assert.match(html, /mailto:r\.talyutin@gmail\.com/);
+  assert.doesNotMatch(html, /info@yarcyberseason\.ru/);
   assert.doesNotMatch(html, /\{\{TITLE\}\}|api\.example\.test/);
   assert.deepEqual((await (await fetch(url + '/api/works')).json()).map(row => row.slug), ['ycs', 'dashboard']);
   assert.equal((await fetch(url + '/api/works/stories')).status, 404);
@@ -69,16 +70,17 @@ test('failed upstream shows three approved projects while data routes report 503
     assert.equal(page.status, 200);
     assert.match(page.headers.get('content-type'), /text\/html/);
     const html = await page.text();
-    for (const marker of ['ТАЛЮТИН', 'id="approach"', 'id="contact"', '/motion.js', 'mailto:info@yarcyberseason.ru', 'tel:+79065253445', 'https://vk.com/talyutin']) assert.ok(html.includes(marker), marker);
+    for (const marker of ['ТАЛЮТИН', 'id="approach"', 'id="contact"', '/motion.js', 'mailto:r.talyutin@gmail.com', 'tel:+79065253445', 'https://vk.com/talyutin']) assert.ok(html.includes(marker), marker);
     assert.match(html, /Избранные проекты: 3/);
     assert.match(html, /<template id="works-data" data-unavailable="true">/);
     assert.deepEqual([...html.matchAll(/data-project="([^"]+)"/g)].map(match => match[1]), ['ycs', 'booking', 'tochki']);
-    assert.equal(html.includes('id="selected-case"'), path.includes('work=ycs'));
+    assert.equal(html.includes('id="selected-case"'), false);
+    assert.match(html, /Проекты откроются в новой вкладке/);
     assert.doesNotMatch(html, /SECRET CONNECTION|api\.example\.test|Service unavailable|\{\{[A-Z_]+\}\}/);
   }
   for (const [slug, target] of [['ycs', 'https://yarcyberseason.ru/'], ['booking', 'https://talyutin.online/'], ['tochki', '/tochki/']]) {
     const html = await (await fetch(url + '/?work=' + slug)).text();
-    assert.ok(html.includes(`href="${target}"`));
+    assert.ok(html.includes(`href="${target}" target="_blank" rel="noopener noreferrer" data-direct="true" data-project="${slug}"`));
   }
   assert.equal((await fetch(url + '/offline-works.js')).status, 200);
 });
@@ -109,8 +111,8 @@ test('homepage isolates dependency failures, recovers and respects successful em
     assert.equal(html.includes('data-unavailable="true"'), state.works === null);
     assert.equal(html.includes('Избранные проекты: 3'), state.works === null);
     assert.equal(html.includes('class="project"'), state.works === null || Boolean(state.works?.length));
-    assert.equal(html.includes('mailto:current@example.test'), Boolean(state.contacts?.length));
-    assert.equal(html.includes('mailto:info@yarcyberseason.ru'), state.contacts === null);
+    assert.equal(html.includes('mailto:r.talyutin@gmail.com'), state.contacts === null || Boolean(state.contacts?.length));
+    assert.doesNotMatch(html, /mailto:(?:current@example\.test|info@yarcyberseason\.ru)/);
     if (state.works?.length === 0) assert.match(html, /Работы скоро появятся/);
     if (state.contacts?.length === 0) assert.match(html, /Контакты скоро появятся/);
   }

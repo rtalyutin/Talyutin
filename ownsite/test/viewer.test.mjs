@@ -94,7 +94,7 @@ function harness({ rows = [base, other], href = 'http://portfolio.test/', unavai
   };
   element('works-data').content = { textContent: JSON.stringify(rows) };
   element('works-data').dataset.unavailable = String(unavailable);
-  element('project-list').innerHTML = renderCatalogue(rows);
+  element('project-list').innerHTML = renderCatalogue(rows, '', { direct: unavailable });
   const filters = ['all', 'product', 'systems', 'experience'].map(category => {
     const button = new Element('button'); button.dataset.filter = category; return button;
   });
@@ -240,7 +240,7 @@ test('a stale launch cannot resume after closing and reopening the same slug', a
   assert.equal(h.frame(), null, 'reopening a case is not consent to resume an abandoned launch');
 });
 
-test('network and malformed-list failures use approved cards and replace the stale frame target', async t => {
+test('network and malformed-list failures close the dialog and show direct project links', async t => {
   for (const [name, complete] of [
     ['HTTP failure', h => h.answer(1, [], false)],
     ['invalid list', h => h.answer(1, { records: [base] })],
@@ -249,14 +249,29 @@ test('network and malformed-list failures use approved cards and replace the sta
     await t.test(name, async () => {
       const h = harness(); await open(h);
       const done = h.launch(); complete(h); await done;
-      assert.equal(h.frame().src, 'https://yarcyberseason.ru/');
-      assert.equal(h.state('activeWork.slug'), 'ycs');
+      assert.equal(h.frame(), null);
+      assert.equal(h.state('activeWork'), null);
+      assert.equal(h.element('case-dialog').open, false);
       assert.equal(h.state('works.map(work => work.slug).join(",")'), 'ycs,booking,tochki');
       assert.equal(h.element('project-list').querySelectorAll('[data-project]').length, 3);
+      assert.ok(h.element('project-list').querySelectorAll('[data-project]').every(link => link.dataset.direct === 'true'));
       assert.equal(h.state('worksUnavailable'), true);
       assert.equal(h.timers.size, 0);
     });
   }
+});
+
+test('fallback clicks keep native new-tab navigation and never request or open a case', async () => {
+  const h = harness({ rows: offlineWorks, unavailable: true, href: 'http://portfolio.test/?work=ycs&mode=reveal' });
+  for (const link of h.element('project-list').querySelectorAll('[data-project]')) {
+    let prevented = false;
+    h.element('project-list').dispatch('click', { target: link, button: 0, preventDefault: () => { prevented = true; } });
+    assert.equal(prevented, false);
+  }
+  h.window.dispatch('popstate');
+  assert.equal(h.pending.length, 0);
+  assert.equal(h.element('case-dialog').open, false);
+  assert.equal((h.element('project-list').innerHTML.match(/target="_blank"/g) ?? []).length, 3);
 });
 
 test('direct links and history select cases without creating a second history entry', async () => {

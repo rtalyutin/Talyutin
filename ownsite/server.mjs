@@ -58,8 +58,9 @@ async function getContacts(database) {
 
 // Approved public contacts from the accepted homepage, independent of portfolio uptime.
 // A successful empty contact response still hides them intentionally.
+const publicEmail = 'r.talyutin@gmail.com';
 const offlineContacts = [
-  { label: 'Написать письмо', href: 'mailto:info@yarcyberseason.ru' },
+  { label: 'Написать письмо', href: `mailto:${publicEmail}` },
   { label: 'Позвонить', href: 'tel:+79065253445' },
   { label: 'ВКонтакте', href: 'https://vk.com/talyutin' }
 ];
@@ -71,8 +72,10 @@ async function renderIndex(url, database) {
   const worksUnavailable = worksResult.status === 'rejected';
   const works = worksUnavailable ? offlineWorks : worksResult.value;
   const requested = url.searchParams.get('work');
-  const chosen = works.find(work => work.slug === requested);
-  const contacts = contactsResult.status === 'fulfilled' ? contactsResult.value : offlineContacts;
+  const chosen = worksUnavailable ? undefined : works.find(work => work.slug === requested);
+  // The owner's current website email also applies while an upstream retains the old address.
+  const contacts = (contactsResult.status === 'fulfilled' ? contactsResult.value : offlineContacts)
+    .map(link => link.href.startsWith('mailto:') ? { ...link, href: `mailto:${publicEmail}` } : link);
   const outlets = contacts.map(link => {
     const kind = link.href.startsWith('tel:') ? 'phone' : link.href.startsWith('mailto:') ? 'email' : 'external';
     let value = kind === 'external' ? link.label : link.href.replace(/^(tel:|mailto:)/, '').split('?')[0];
@@ -82,7 +85,8 @@ async function renderIndex(url, database) {
   const primary = contacts.find(link => link.href.startsWith('mailto:')) ?? contacts[0];
   const values = {
     PAGE_TITLE: escapeHtml(chosen ? `${chosen.title} · Роман Талютин` : 'Задача → решение · Роман Талютин'),
-    CATALOGUE: renderCatalogue(works, chosen?.slug) || `<p class="catalogue-empty">${worksUnavailable ? 'Портфолио временно недоступно. Попробуйте зайти позже.' : 'Работы скоро появятся.'}</p>`,
+    CATALOGUE: renderCatalogue(works, chosen?.slug, { direct: worksUnavailable }) || `<p class="catalogue-empty">${worksUnavailable ? 'Портфолио временно недоступно. Попробуйте зайти позже.' : 'Работы скоро появятся.'}</p>`,
+    CATALOGUE_HINT: worksUnavailable ? 'Проекты откроются в новой вкладке.' : 'У каждого проекта — свой разбор.',
     CASE_COUNT: String(works.length).padStart(2, '0'),
     WORKS_UNAVAILABLE: String(worksUnavailable),
     FILTER_STATUS: worksUnavailable ? `Избранные проекты: ${works.length}` : `Показано работ: ${works.length}`,

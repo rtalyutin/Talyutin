@@ -33,7 +33,8 @@ test('SSR and client use the same catalogue without widening publication or losi
       assert.ok(html.includes(renderCatalogue(works, works.find(work => work.slug === 'dashboard')?.slug)));
       assert.equal((html.match(/class="project"/g) ?? []).length, expectedCount);
       assert.match(html, /data-contact="phone" href="tel:\+79065253445"/);
-      assert.match(html, /data-contact="email" href="mailto:info@yarcyberseason\.ru"/);
+      assert.match(html, /data-contact="email" href="mailto:r\.talyutin@gmail\.com"/);
+      assert.doesNotMatch(html, /info@yarcyberseason\.ru/);
     }
     for (const module of ['/registry.js', '/motion.js']) {
       const response = await fetch(origin + module);

@@ -25,7 +25,8 @@ function filterWorks() {
 }
 
 function updateCatalogue() {
-  list.innerHTML = renderCatalogue(works, activeSlug) || `<p class="catalogue-empty">${worksUnavailable ? 'Портфолио временно недоступно. Попробуйте зайти позже.' : 'Работы скоро появятся.'}</p>`;
+  list.innerHTML = renderCatalogue(works, activeSlug, { direct: worksUnavailable }) || `<p class="catalogue-empty">${worksUnavailable ? 'Портфолио временно недоступно. Попробуйте зайти позже.' : 'Работы скоро появятся.'}</p>`;
+  $('catalogue-hint').textContent = worksUnavailable ? 'Проекты откроются в новой вкладке.' : 'У каждого проекта — свой разбор.';
   filterWorks();
 }
 
@@ -70,6 +71,7 @@ function showCase(slug) {
 }
 
 async function openCase(slug, push = false) {
+  if (worksUnavailable) return;
   stopRequest();
   resetScreen();
   activeSlug = slug;
@@ -96,8 +98,7 @@ async function openCase(slug, push = false) {
     if (current !== revision || !dialog.open) return;
     works = offlineWorks;
     worksUnavailable = true;
-    showCase(slug);
-    return current;
+    closeCase();
   } finally {
     clearTimeout(timeout);
     if (current === revision) request = null;
@@ -146,7 +147,7 @@ if (typeof dialog.showModal === 'function') {
   $('selected-case')?.remove(); // Server-rendered links and case remain usable without JS.
   list.addEventListener('click', event => {
     const link = event.target.closest('[data-project]');
-    if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (!link || link.dataset.direct === 'true' || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
     returnSlug = link.dataset.project;
     void openCase(returnSlug, true);

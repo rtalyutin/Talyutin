@@ -27,12 +27,14 @@ export function canEmbed(work) {
     (url === '/tochki/' || ['https://xn--90aiaibl0ahlel5n.xn--p1ai', 'https://ycs.bar', 'https://yarcyberseason.ru'].includes(new URL(url).origin));
 }
 
-export function renderCatalogue(works, selectedSlug = '') {
+export function renderCatalogue(works, selectedSlug = '', { direct = false } = {}) {
   if (!Array.isArray(works)) return '';
   return works.map((work, index) => {
     const slug = String(work.slug ?? '');
-    const href = `/?work=${encodeURIComponent(slug)}&mode=reveal#works`;
-    return `<a class="project" href="${escapeHtml(href)}" data-project="${escapeHtml(slug)}" data-category="${categoryFor(work)}"${slug === selectedSlug ? ' aria-current="true"' : ''}><span class="num">${String(index + 1).padStart(2, '0')}</span><span class="project-title">${escapeHtml(work.title)}</span><span class="desc">${escapeHtml(work.summary || work.category)}</span><span class="open"><span class="open-label">Открыть</span><span class="arrow" aria-hidden="true">↗</span></span></a>`;
+    const projectUrl = direct ? liveUrlFor(work) : null;
+    const href = projectUrl || `/?work=${encodeURIComponent(slug)}&mode=reveal#works`;
+    const target = projectUrl ? ' target="_blank" rel="noopener noreferrer" data-direct="true"' : '';
+    return `<a class="project" href="${escapeHtml(href)}"${target} data-project="${escapeHtml(slug)}" data-category="${categoryFor(work)}"${slug === selectedSlug ? ' aria-current="true"' : ''}><span class="num">${String(index + 1).padStart(2, '0')}</span><span class="project-title">${escapeHtml(work.title)}</span><span class="desc">${escapeHtml(work.summary || work.category)}</span><span class="open"><span class="open-label">Открыть</span><span class="arrow" aria-hidden="true">↗</span></span></a>`;
   }).join('');
 }
 
