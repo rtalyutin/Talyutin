@@ -901,3 +901,49 @@ header {
     margin-top: 27px;
   }
 }
+/* Редакция 3: компактные блоки и читаемые действия. */
+section { min-height: 0; padding: 80px 6%; }
+.hero { min-height: 100svh; }
+.hero-audience, .trust { font-size: 16px; }
+.hero-audience { margin-bottom: 18px; }
+.hero h1 { margin-bottom: 24px; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 8px 28px; }
+.hero-actions a, .primary-link, summary { display: inline-flex; align-items: center; min-height: 44px; font-size: 17px; text-decoration: underline; text-underline-offset: 5px; }
+.primary-link { font-weight: bold; }
+.trust { margin-top: 18px; }
+.situations, .team { margin-top: 0; }
+.situations h3, .team h3 { font-size: 22px; }
+.situations p, .team article > p:last-child { font-size: 17px; }
+.process-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; }
+.process-grid li { font-size: 17px; line-height: 1.5; margin-bottom: 12px; }
+details { margin: 24px 0; max-width: 800px; }
+summary { cursor: pointer; font-weight: bold; }
+summary:focus-visible, button:focus-visible { outline: 2px solid #073c10; outline-offset: 4px; }
+details p { margin: 16px 0; }
+.anchor { position: absolute; top: 0; scroll-margin-top: 20px; }
+#pricing h2, #pricing .lead { max-width: 100%; }
+/* Interactive controls remain visible and usable during assembly. */
+.motion-pending .hero-actions, .motion-active .hero-actions, .boot-intro #intro .hero-actions { visibility: visible; }
+@media (max-width: 760px) {
+ section { padding: 54px 6%; }
+ .hero { padding-top: 16px; }
+ .hero > header { margin-bottom: 20px; }
+ .brand { width: 88px; flex-basis: 88px; }
+ .brand-cat { width: 72px; height: 52px; }
+ .brand .brand-name { font-size: 22px; }
+ .hero > header > a:last-child { margin-top: 17px; font-size: 14px; }
+ .hero h1 { font-size: 35px; margin-bottom: 16px; }
+ .hero .lead { font-size: 16px; margin-bottom: 10px; }
+ .hero-audience { font-size: 14px; margin-bottom: 12px; }
+ .hero-actions { display: grid; gap: 0; }
+ .trust { margin: 8px 0 0; font-size: 14px; }
+ .hero figure { max-width: 260px; }
+ .process-grid { grid-template-columns: 1fr; gap: 12px; }
+ p { font-size: 16px; }
+}
+/* Keep the two hero links available while the rest assembles. */
+.boot-intro #intro > .hero-grid, #intro.motion-pending > .hero-grid, #intro.motion-active > .hero-grid { opacity: 1; }
+.boot-intro #intro .hero-grid > div > :not(.hero-actions), #intro.motion-pending .hero-grid > div > :not(.hero-actions), #intro.motion-active .hero-grid > div > :not(.hero-actions), .boot-intro #intro figure, #intro.motion-pending figure, #intro.motion-active figure { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+ .boot-intro #intro .hero-grid > div > :not(.hero-actions), #intro.motion-pending .hero-grid > div > :not(.hero-actions), #intro.motion-active .hero-grid > div > :not(.hero-actions), .boot-intro #intro figure, #intro.motion-pending figure, #intro.motion-active figure { opacity: 1; }
+}

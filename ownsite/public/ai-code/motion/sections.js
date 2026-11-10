@@ -55,7 +55,7 @@ export function createSections(sections, renderer, scheduler, onReady) {
   };
   const completeTarget = () => {
     const id = decodeURIComponent(location.hash.slice(1));
-    const record = records.find((r) => r.element.id === id);
+    const record = records.find((r) => r.element.id === id || r.element.querySelector(`[id="${CSS.escape(id)}"]`));
     if (record) finish(record);
     renderer.clear();
   };
@@ -85,7 +85,7 @@ export function createSections(sections, renderer, scheduler, onReady) {
   document.addEventListener("click", (event) => {
     const link = event.target.closest('a[href^="#"]');
     if (link) {
-      const record = records.find((r) => r.element.id === link.hash.slice(1));
+      const record = records.find((r) => r.element.id === link.hash.slice(1) || r.element.querySelector(`[id="${CSS.escape(link.hash.slice(1))}"]`));
       if (record) finish(record);
     }
   });
