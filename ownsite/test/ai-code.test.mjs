@@ -39,6 +39,8 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
     "styles.css",
     "boot.js",
     "main.js",
+    "events.js",
+    "motion/studio.js",
     "rain.svg",
     "motion/config.js",
     "motion/cat-gaze.js",
@@ -57,6 +59,20 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
       ),
     );
   }
+  const compressed = await fetch(base + "/ai-code", { headers: { "Accept-Encoding": "gzip" } });
+  assert.equal(compressed.headers.get("content-encoding"), "gzip");
+  assert.equal(compressed.headers.get("vary"), "Accept-Encoding");
+  assert.equal(await compressed.text(), html);
+  const uncompressed = await fetch(base + "/ai-code", { headers: { "Accept-Encoding": "gzip;q=0" } });
+  assert.equal(uncompressed.headers.get("content-encoding"), null);
+  assert.equal(await uncompressed.text(), html);
+  const preview = await fetch(base + "/ai-code/social-preview.png");
+  assert.equal(preview.status, 200);
+  assert.deepEqual(Buffer.from(await preview.arrayBuffer()), readFileSync(new URL("../public/ai-code/social-preview.png", import.meta.url)));
+  const font = await fetch(base + "/ai-code/fonts/onest-latin-cyrillic.woff2");
+  assert.equal(font.status, 200);
+  assert.equal(font.headers.get("content-type"), "font/woff2");
+  assert.deepEqual(Buffer.from(await font.arrayBuffer()), readFileSync(new URL("../public/ai-code/fonts/onest-latin-cyrillic.woff2", import.meta.url)));
   for (const path of ["/ai-code/", "/ai-code/index.html"]) {
     const r = await fetch(base + path, { redirect: "manual" });
     assert.equal(r.status, 308);

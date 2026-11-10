@@ -1,35 +1,42 @@
-// Deliberately separate from motion: a failed decorative module cannot break links.
-export const telegramDraft = 'Здравствуйте! Пишу с лендинга ИИКОТ. У меня работающий продукт, собранный с ИИ. Хочу обсудить, как подготовить код к передаче разработчикам';
+// Independent of decorative modules: native links also work if motion fails.
 export function trackGoal(name, params) {
   const id = Number(document.documentElement.dataset.metrikaId);
   if (!Number.isSafeInteger(id) || id <= 0 || typeof window.ym !== 'function') return;
-  try { window.ym(id, 'reachGoal', name, params); } catch { /* Navigation stays native. */ }
+  try { window.ym(id, 'reachGoal', name, params); } catch { /* Analytics cannot block an action. */ }
 }
-if (typeof document !== 'undefined') {
-  const id = Number(document.documentElement.dataset.metrikaId);
-  if (Number.isSafeInteger(id) && id > 0) {
-    window.ym = window.ym || function () { (window.ym.a = window.ym.a || []).push(arguments); };
-    window.ym.l = Date.now();
-    const script = document.createElement('script');
-    script.src = 'https://mc.yandex.ru/metrika/tag.js';
-    script.async = true;
-    // No raw query/UTM, user links, field values, click map or session recording.
-    window.ym(id, 'init', { defer: true, webvisor: false, clickmap: false, trackLinks: false, trackHash: false });
-    window.ym(id, 'hit', location.origin + '/ai-code');
-    document.head.append(script);
-  }
-  for (const link of document.querySelectorAll('[data-telegram]')) {
-    link.href = 'https://t.me/evieer?text=' + encodeURIComponent(telegramDraft);
-  }
-  document.addEventListener('click', event => {
-    const link = event.target.closest?.('a[href]');
-    if (!link) return;
-    const block = link.closest('section')?.id || 'navigation';
-    if (link.getAttribute('href').startsWith('https://t.me/evieer')) trackGoal('tg_click', { block });
-    const target = link.getAttribute('href');
-    if (['#request', '#cases', '#process'].includes(target)) trackGoal('cta_click', { block, target: target.slice(1) });
-  });
-  document.addEventListener('toggle', event => {
-    if (event.target.matches?.('details[data-case]') && event.target.open) trackGoal('case_open', { case: event.target.dataset.case });
-  }, true);
+const counter = Number(document.documentElement.dataset.metrikaId);
+if (Number.isSafeInteger(counter) && counter > 0) {
+  window.ym = window.ym || function () { (window.ym.a = window.ym.a || []).push(arguments); };
+  window.ym.l = Date.now();
+  const script = document.createElement('script');
+  script.src = 'https://mc.yandex.ru/metrika/tag.js';
+  script.async = true;
+  window.ym(counter, 'init', { defer: true, webvisor: false, clickmap: false, trackLinks: false, trackHash: false });
+  window.ym(counter, 'hit', location.origin + '/ai-code');
+  document.head.append(script);
 }
+const directOpening = new WeakSet();
+function openAnchor() {
+  let id;
+  try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
+  const target = document.getElementById(id);
+  if (!(target instanceof HTMLDetailsElement) || target.open) return;
+  directOpening.add(target);
+  target.open = true;
+}
+document.addEventListener('click', event => {
+  const link = event.target.closest?.('a[href]');
+  if (!link) return;
+  const block = link.closest('section')?.id || 'navigation';
+  if ('telegram' in link.dataset) trackGoal('tg_click', { block });
+  if (link.dataset.cta) trackGoal('cta_click', { block, target: link.dataset.cta });
+});
+document.querySelectorAll('details').forEach(details => details.addEventListener('toggle', () => {
+  const source = directOpening.has(details) ? 'direct_anchor' : 'user';
+  directOpening.delete(details);
+  if (!details.open) return;
+  if (details.dataset.case) trackGoal('case_open', { code: details.dataset.case, source });
+  if (details.dataset.detail) trackGoal('details_open', { code: details.dataset.detail });
+}));
+window.addEventListener('hashchange', openAnchor);
+openAnchor();

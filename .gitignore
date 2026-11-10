@@ -2,3 +2,6 @@
 ownsite/data/
 *.blend1
 phone-evidence/
+
+# Local visual evidence, browser reports and audit tools
+**/work/

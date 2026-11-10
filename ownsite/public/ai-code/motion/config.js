@@ -42,3 +42,16 @@ export function captureProgress(x, y, height) {
     motion.captureSweep * clamp(y / Math.max(1, height), 0, 1)
   );
 }
+
+// Studio motion: one entrance, short feedback, no ambient animation loop.
+export const studioMotion = Object.freeze({
+  heroDuration: 680,
+  sectionDuration: 620,
+  revealDuration: 460,
+  itemStagger: 65,
+  detailsDuration: 260,
+  maxDpr: 1.5,
+  codeSize: 9,
+  codeStep: 18,
+  codeOpacity: 0.22,
+});

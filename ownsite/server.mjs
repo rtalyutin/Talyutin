@@ -1,3 +1,4 @@
+import { gzipSync } from 'node:zlib';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -10,10 +11,10 @@ import { renderCatalogue, renderCase } from './public/registry.js';
 import { offlineWorks } from './public/offline-works.js';
 
 const root = resolve(import.meta.dirname, 'public');
-const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.txt': 'text/plain' };
+const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.txt': 'text/plain', '.woff2': 'font/woff2' };
 const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/metrika.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const php2shellFiles = new Set(['/php2shell', '/php2shell/styles.css', '/php2shell/app.js']);
-const aiCodeFiles = new Set(['/ai-code/rain.svg', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/events.js', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-volume.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
+const aiCodeFiles = new Set(['/ai-code/rain.svg', '/ai-code/social-preview.png', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/events.js', '/ai-code/motion/studio.js', '/ai-code/fonts/onest-latin-cyrillic.woff2', '/ai-code/fonts/OFL.txt', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-volume.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
@@ -121,7 +122,7 @@ const portfolioCsp = defaultCsp
 
 function send(res, code, type, body, extra = {}) {
   res.writeHead(code, {
-    'Content-Type': (type === 'model/gltf-binary' ? type : `${type}; charset=utf-8`),
+    'Content-Type': ((type === 'model/gltf-binary' || type === 'font/woff2') ? type : `${type}; charset=utf-8`),
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
@@ -129,6 +130,26 @@ function send(res, code, type, body, extra = {}) {
     ...extra
   });
   res.end(body);
+}
+
+// Compress the isolated landing without changing API or neighboring pages.
+// A bounded entry per allowlisted path keeps repeated requests inexpensive.
+const aiCodeCompression = new Map();
+function sendAiCode(req, res, type, body, extra = {}) {
+  const bytes = Buffer.isBuffer(body) ? body : Buffer.from(body);
+  const headers = { Vary: 'Accept-Encoding', ...extra };
+  const acceptsGzip = /(?:^|,)\s*gzip\s*(?:,|$|;)/i.test(req.headers['accept-encoding'] || '')
+    && !/(?:^|,)\s*gzip\s*;\s*q=0(?:\.0*)?\s*(?:,|$)/i.test(req.headers['accept-encoding'] || '');
+  if (acceptsGzip && bytes.length > 1024 && !type.startsWith('font/') && !type.startsWith('image/')) {
+    const key = new URL(req.url, 'http://localhost').pathname;
+    let cached = aiCodeCompression.get(key);
+    if (!cached || !cached.source.equals(bytes)) {
+      cached = { source: bytes, compressed: gzipSync(bytes) };
+      aiCodeCompression.set(key, cached);
+    }
+    return send(res, 200, type, cached.compressed, { ...headers, 'Content-Encoding': 'gzip' });
+  }
+  return send(res, 200, type, bytes, headers);
 }
 
 export function createHandler(database) {
@@ -153,12 +174,12 @@ async function handle(req, res, database) {
       if (url.pathname === '/ai-code') {
         const counter = /^\d{1,12}$/.test(process.env.AI_CODE_METRIKA_ID || '') ? process.env.AI_CODE_METRIKA_ID : '';
         const html = readFileSync(resolve(root, '.' + path), 'utf8').replace('{{AI_CODE_METRIKA_ID}}', counter);
-        return send(res, 200, 'text/html', html, {
+        return sendAiCode(req, res, 'text/html', html, {
           ...(counter ? { 'Content-Security-Policy': portfolioCsp } : {}),
           ...(process.env.ALLOW_INDEXING === '1' ? {} : { 'X-Robots-Tag': 'noindex, nofollow' })
         });
       }
-      return send(res, 200, mime[extname(path)], readFileSync(resolve(root, '.' + path)));
+      return sendAiCode(req, res, mime[extname(path)], readFileSync(resolve(root, '.' + path)));
     }
     catch { return send(res, 404, 'text/plain', 'Not found'); }
   }
