@@ -901,3 +901,35 @@ header {
     margin-top: 27px;
   }
 }
+
+/* Pilot offer: the next action remains available during every assembly. */
+.hero-actions { display:flex; flex-wrap:wrap; gap:22px; align-items:center; margin:28px 0; font-size:16px; line-height:1.6; }
+.primary-link { font-weight:bold; text-decoration-thickness:2px; }
+.boot-intro #intro .hero-grid,.motion-pending .hero-grid,.motion-active .hero-grid { opacity:1; }
+.boot-intro #intro .hero-grid > div > :not([data-persistent]),
+.motion-pending .hero-grid > div > :not([data-persistent]),
+.motion-active .hero-grid > div > :not([data-persistent]),
+.boot-intro #intro figure,.motion-pending .hero-grid figure,.motion-active .hero-grid figure { opacity:0; }
+section.motion-pending > [data-persistent],section.motion-active > [data-persistent] { opacity:1; }
+.ai-role { margin-top:45px; max-width:760px; }
+#result .corner { display:none; }
+#request .telegram { font-size:clamp(32px,4vw,58px); line-height:1.15; }
+#request .contact { align-items:start; }
+#request .terminal { margin-top:0; }
+.team-role { color:var(--muted); }
+#cases { min-height:560px; }
+a { overflow-wrap:anywhere; }
+@media(max-width:760px) {
+  .hero header { margin-bottom:32px; }
+  .hero h1 { margin-bottom:22px; }
+  .hero-actions { margin:22px 0; gap:16px; font-size:15px; }
+  .hero .muted { margin-top:20px; }
+  #cases { min-height:0; }
+  #request .contact { gap:25px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .boot-intro #intro .hero-grid > div > :not([data-persistent]),
+  .motion-pending .hero-grid > div > :not([data-persistent]),
+  .motion-active .hero-grid > div > :not([data-persistent]),
+  .boot-intro #intro figure,.motion-pending .hero-grid figure,.motion-active .hero-grid figure { opacity:1; }
+}

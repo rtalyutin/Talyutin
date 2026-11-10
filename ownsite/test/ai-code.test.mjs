@@ -27,7 +27,7 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
   const page = await fetch(base + "/ai-code");
   assert.equal(page.status, 200);
   const html = await page.text();
-  assert.equal((html.match(/<section /g) || []).length, 8);
+  assert.equal((html.match(/<section /g) || []).length, 9);
   assert.match(html, /href="#process"/);
   assert.match(html, /href="https:\/\/t.me\/evieer"/);
   assert.doesNotMatch(
@@ -39,6 +39,7 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
     "styles.css",
     "boot.js",
     "main.js",
+    "events.js",
     "rain.svg",
     "motion/config.js",
     "motion/cat-gaze.js",
@@ -113,4 +114,20 @@ test("cat is a depth-bearing triangle mesh with surface-attached ASCII and trans
     rotated = transformPoint(original, 0.2, 0);
   assert.notEqual(projectPoint(original).x, projectPoint(rotated).x);
   assert.ok(Math.abs(Math.hypot(...original) - Math.hypot(...rotated)) < 1e-10);
+});
+
+test('pilot page has Telegram-only intake, confirmed names, canonical and no fictional cases', async t => {
+  const server = createServer(createHandler({}));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/ai-code`);
+  const html = await response.text();
+  assert.match(html, /Подготовим ваш/);
+  assert.match(html, /href="#request"/);
+  assert.match(html, /Илья Еремин/);
+  assert.match(html, /Роман Талютин/);
+  assert.match(html, /rel="canonical" href="https:\/\/talyutin.ru\/ai-code"/);
+  assert.match(html, /Готовим к публикации подтверждённые кейсы/);
+  assert.doesNotMatch(html, /<form\b|<input\b|<textarea\b|hh\.ru|\{\{AI_CODE_METRIKA_ID\}\}/);
+  assert.equal(response.headers.get('x-robots-tag'), process.env.ALLOW_INDEXING === '1' ? null : 'noindex, nofollow');
 });
