@@ -1,5 +1,5 @@
 // Deliberately separate from motion: a failed decorative module cannot break links.
-export const telegramDraft = 'Здравствуйте! Пишу с лендинга ИИКОТ. Хочу подготовить AI-прототип к пилоту. Задача: …';
+export const telegramDraft = 'Здравствуйте! Пишу с лендинга ИИКОТ. У меня работающий продукт, собранный с ИИ. Хочу обсудить, как подготовить код к передаче разработчикам';
 export function trackGoal(name, params) {
   const id = Number(document.documentElement.dataset.metrikaId);
   if (!Number.isSafeInteger(id) || id <= 0 || typeof window.ym !== 'function') return;

@@ -933,3 +933,13 @@ a { overflow-wrap:anywhere; }
   .motion-active .hero-grid > div > :not([data-persistent]),
   .boot-intro #intro figure,.motion-pending .hero-grid figure,.motion-active .hero-grid figure { opacity:1; }
 }
+/* Commercial question stays readable with the primary action on small screens. */
+.hero h1 { font-size:clamp(32px,3.3vw,53px); line-height:1.08; }
+.hero-grid { grid-template-columns:48% 52%; }
+@media(max-width:760px) {
+  .hero-grid { grid-template-columns:1fr; }
+  .hero > header { margin-bottom:22px; }
+  .hero h1 { font-size:27px; line-height:1.05; margin-bottom:16px; }
+  .hero .lead { font-size:14px; line-height:1.35; margin-bottom:16px; }
+  .hero-actions { margin:16px 0; gap:12px; }
+}

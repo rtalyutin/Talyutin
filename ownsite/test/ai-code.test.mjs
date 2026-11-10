@@ -116,13 +116,15 @@ test("cat is a depth-bearing triangle mesh with surface-attached ASCII and trans
   assert.ok(Math.abs(Math.hypot(...original) - Math.hypot(...rotated)) < 1e-10);
 });
 
-test('pilot page has Telegram-only intake, confirmed names, canonical and no fictional cases', async t => {
+test('commercial page has Telegram-only intake, confirmed names, canonical and no fictional cases', async t => {
   const server = createServer(createHandler({}));
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   t.after(() => new Promise(resolve => server.close(resolve)));
   const response = await fetch(`http://127.0.0.1:${server.address().port}/ai-code`);
   const html = await response.text();
-  assert.match(html, /Подготовим ваш/);
+  assert.match(html, /Продукт уже приносит деньги/);
+  assert.doesNotMatch(html, /пилот|AI-прототип|<form\b|<input\b/i);
+  assert.match(html, /данные клиентов/);
   assert.match(html, /href="#request"/);
   assert.match(html, /Илья Еремин/);
   assert.match(html, /Роман Талютин/);
