@@ -5,7 +5,12 @@ export const motion = Object.freeze({
   rain: 220,
   assemble: 1050,
   maxDpr: 1.5,
-  maxParticles: 2800,
+  rainColumnWidth: 14,
+  rainRowHeight: 12,
+  rainFontSize: 11,
+  rainSpeed: 0.12,
+  rainOpacity: 0.5,
+  captureSweep: 0.62,
   gazeEase: 0.14,
   gazeLimitX: 10,
   gazeLimitY: 7,
@@ -20,4 +25,19 @@ export function phase(elapsed, hero = false) {
     : elapsed < rain + assemble
       ? { state: "assemble", progress: (elapsed - rain) / assemble }
       : { state: "ready", progress: 1 };
+}
+
+// Each column has one downward capture front. A glyph is revealed exactly where
+// it belongs when this front reaches its row; it never moves towards that point.
+export function rainColumn(x) {
+  return Math.floor(x / motion.rainColumnWidth);
+}
+export function columnStart(column) {
+  return 0.035 + (((column * 73 + 19) % 101) / 101) * 0.28;
+}
+export function captureProgress(x, y, height) {
+  return (
+    columnStart(rainColumn(x)) +
+    motion.captureSweep * clamp(y / Math.max(1, height), 0, 1)
+  );
 }

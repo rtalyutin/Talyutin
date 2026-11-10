@@ -11,6 +11,8 @@ export function createSections(sections, renderer, scheduler, onReady) {
     record.state = "ready";
     record.element.dataset.state = "ready";
     record.element.classList.remove("motion-pending", "motion-active");
+    renderer.release?.(record.element);
+    record.targets = [];
     onReady(record.element);
   };
   const task = (time) => {

@@ -1,4 +1,4 @@
-import { alphabet, motion } from "./config.js";
+import { alphabet, motion, columnStart, captureProgress } from "./config.js";
 // A single scheduler serves section assembly and gaze; idle and hidden tabs do no work.
 export function createScheduler(onError) {
   const tasks = new Set();
@@ -95,7 +95,15 @@ export function decorateText(element) {
       const char = "@#08"[(x * 3 + y * 7) % 4];
       ink.fillStyle = color;
       ink.fillText(char, x, y);
-      points.push({ x, y, char, color, size: step + 1 });
+      points.push({
+        x,
+        y,
+        char,
+        color,
+        size: step + 2,
+        weight: "bold",
+        baseline: "middle",
+      });
     }
   element.append(decoration);
   element.classList.add("glyph-ready");
@@ -130,16 +138,13 @@ export function sectionTargets(section) {
       y: cat.top - box.top + matrix.d * y + matrix.f,
       char: text.textContent,
       color: text.getAttribute("fill"),
-      size: Math.max(4, matrix.a * 9),
+      size: Math.max(2, matrix.a * parseFloat(getComputedStyle(text).fontSize)),
     });
   }
   const walker = document.createTreeWalker(section, NodeFilter.SHOW_TEXT);
   let node;
   while ((node = walker.nextNode())) {
-    if (
-      !node.data.trim() ||
-      node.parentElement.closest('[data-glyph],#cat,[aria-hidden="true"]')
-    )
+    if (!node.data.trim() || node.parentElement.closest("[data-glyph],#cat"))
       continue;
     const style = getComputedStyle(node.parentElement);
     for (let i = 0; i < node.length; i++) {
@@ -157,17 +162,13 @@ export function sectionTargets(section) {
       });
     }
   }
-  const stride = Math.max(1, Math.ceil(targets.length / motion.maxParticles));
+  // Keep every target, including all decorative glyphs. Captured symbols are
+  // cached once, so adding fidelity does not mean redrawing all text every frame.
   return targets
-    .filter((_, i) => i % stride === 0)
-    .map((p, i) => ({
-      ...p,
-      originX: (((i * 137) % 1000) / 1000) * box.width,
-      originY:
-        -50 + (((i * 83) % 1000) / 1000) * Math.min(box.height, innerHeight),
-      delay: (i % 19) / 70,
-    }));
+    .map((p) => ({ ...p, captureAt: captureProgress(p.x, p.y, box.height) }))
+    .sort((a, b) => a.captureAt - b.captureAt);
 }
+
 export function createGlyphRenderer(canvas) {
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas unavailable");
@@ -181,58 +182,101 @@ export function createGlyphRenderer(canvas) {
   function clear() {
     context.clearRect(0, 0, innerWidth, innerHeight);
   }
+  const captures = new WeakMap();
+  function captureLayer(section, targets, r) {
+    let layer = captures.get(section);
+    if (!layer || layer.targets !== targets) {
+      const sheet = document.createElement("canvas");
+      const dpr = Math.min(devicePixelRatio || 1, motion.maxDpr);
+      sheet.width = Math.ceil(r.width * dpr);
+      sheet.height = Math.ceil(r.height * dpr);
+      const ink = sheet.getContext("2d");
+      if (!ink) throw new Error("Canvas unavailable");
+      ink.scale(dpr, dpr);
+      layer = {
+        sheet,
+        ink,
+        index: 0,
+        targets,
+        width: r.width,
+        height: r.height,
+      };
+      captures.set(section, layer);
+    }
+    return layer;
+  }
   function draw(section, targets, state, progress, time) {
     const r = section.getBoundingClientRect();
     context.save();
     context.beginPath();
     context.rect(r.left, r.top, r.width, r.height);
     context.clip();
-    // Sparse column trails become the quiet, static background after assembly.
+    // Rain continues at full strength until the final target has been captured.
+    // These are always vertical streams; no particle flies across the composition.
     context.fillStyle = "#20cb45";
-    context.font = "11px monospace";
-    for (let x = 18; x < r.width; x += 27) {
-      const column = Math.floor(x / 27);
-      const head =
-        ((time * 0.075 + column * 173) % Math.max(1, r.height + 360)) - 180;
-      for (let j = 0; j < 22; j++) {
-        const y = head - j * 14;
-        if (y < 0 || y > r.height) continue;
-        context.globalAlpha =
-          (1 - j / 22) *
-          (state === "rain" ? 0.65 : 0.18) *
-          (1 - progress * 0.7);
+    context.font = `${motion.rainFontSize}px monospace`;
+    context.textBaseline = "alphabetic";
+    const columnCount = Math.ceil(r.width / motion.rainColumnWidth);
+    for (let column = 0; column < columnCount; column++) {
+      const x = column * motion.rainColumnWidth + motion.rainColumnWidth / 2;
+      const tail = 30 * motion.rainRowHeight;
+      const head = (time * motion.rainSpeed + column * 173) % (r.height + tail);
+      for (let j = 0; j < 30; j++) {
+        const y = head - j * motion.rainRowHeight;
+        if (
+          y < 0 ||
+          y > r.height ||
+          y + r.top < -15 ||
+          y + r.top > innerHeight + 15
+        )
+          continue;
+        context.globalAlpha = (1 - j / 30) * motion.rainOpacity;
         context.fillText(
-          alphabet[(column + j) % alphabet.length],
+          alphabet[(column + j + Math.floor(time / 110)) % alphabet.length],
           r.left + x,
           r.top + y,
         );
+      }
+      if (state === "assemble") {
+        const front =
+          ((progress - columnStart(column)) / motion.captureSweep) * r.height;
+        if (front >= 0 && front <= r.height) {
+          for (let j = 0; j < 12; j++) {
+            const y = front - j * motion.rainRowHeight;
+            if (y < 0 || y > r.height) continue;
+            context.globalAlpha = (1 - j / 12) * motion.rainOpacity;
+            context.fillText(
+              alphabet[(column + j) % alphabet.length],
+              r.left + x,
+              r.top + y,
+            );
+          }
+        }
       }
     }
     context.globalAlpha = 1;
-    if (state === "assemble")
-      for (const p of targets) {
-        const t = Math.max(
-          0,
-          Math.min(1, (progress - p.delay) / (1 - p.delay)),
-        );
-        const eased = 1 - (1 - t) ** 3;
-        const x = p.originX + (p.x - p.originX) * eased,
-          y = p.originY + (p.y - p.originY) * eased;
-        if (y + r.top < -20 || y + r.top > innerHeight + 20) continue;
-        context.fillStyle = t > 0.75 ? p.color : "#13bb34";
-        context.font = `${p.size}px monospace`;
-        context.fillText(
-          t > 0.8
-            ? p.char
-            : alphabet[
-                (Math.floor(time / 65) + Math.floor(p.originX)) %
-                  alphabet.length
-              ],
-          r.left + x,
-          r.top + y,
-        );
+    if (state === "assemble") {
+      const layer = captureLayer(section, targets, r);
+      while (
+        layer.index < targets.length &&
+        targets[layer.index].captureAt <= progress
+      ) {
+        const p = targets[layer.index++];
+        layer.ink.fillStyle = p.color;
+        layer.ink.font = `${p.weight || "normal"} ${p.size}px monospace`;
+        layer.ink.textBaseline = p.baseline || "alphabetic";
+        layer.ink.fillText(p.char, p.x, p.y);
       }
+      context.drawImage(layer.sheet, r.left, r.top, layer.width, layer.height);
+    }
     context.restore();
   }
-  return { resize, clear, draw };
+  return {
+    resize,
+    clear,
+    draw,
+    release(section) {
+      captures.delete(section);
+    },
+  };
 }
