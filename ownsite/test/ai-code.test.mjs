@@ -1,0 +1,94 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import { readFileSync } from "node:fs";
+import { createHandler } from "../server.mjs";
+import { phase, motion } from "../public/ai-code/motion/config.js";
+import { gazeTarget } from "../public/ai-code/motion/cat-gaze.js";
+import { catSvg } from "../public/ai-code/motion/cat-model.js";
+
+test("AI-code serves all assets under existing CSP without the portfolio backend and restricts paths", async (t) => {
+  let calls = 0;
+  const unavailable = async () => {
+    calls++;
+    throw new Error("offline");
+  };
+  const server = createServer(
+    createHandler({ publicWorks: unavailable, publicContacts: unavailable }),
+  );
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const page = await fetch(base + "/ai-code");
+  assert.equal(page.status, 200);
+  const html = await page.text();
+  assert.equal((html.match(/<section /g) || []).length, 8);
+  assert.match(html, /href="#process"/);
+  assert.match(html, /href="https:\/\/t.me\/evieer"/);
+  assert.doesNotMatch(
+    page.headers.get("content-security-policy"),
+    /unsafe-inline|unsafe-eval/,
+  );
+  assert.ok(html.includes(catSvg()), "static cat matches animation model");
+  for (const file of [
+    "styles.css",
+    "boot.js",
+    "main.js",
+    "rain.svg",
+    "motion/config.js",
+    "motion/cat-gaze.js",
+    "motion/cat-model.js",
+    "motion/glyph-renderer.js",
+    "motion/sections.js",
+  ]) {
+    const result = await fetch(base + "/ai-code/" + file);
+    assert.equal(result.status, 200, file);
+    assert.equal(
+      await result.text(),
+      readFileSync(
+        new URL("../public/ai-code/" + file, import.meta.url),
+        "utf8",
+      ),
+    );
+  }
+  for (const path of ["/ai-code/", "/ai-code/index.html"]) {
+    const r = await fetch(base + path, { redirect: "manual" });
+    assert.equal(r.status, 308);
+    assert.equal(r.headers.get("location"), "/ai-code");
+  }
+  for (const path of [
+    "/ai-code/missing",
+    "/ai-code/server.mjs",
+    "/ai-code/%2e%2e/server.mjs",
+  ])
+    assert.equal((await fetch(base + path)).status, 404);
+  assert.equal(
+    (await fetch(base + "/ai-code", { method: "POST" })).status,
+    405,
+  );
+  assert.equal(calls, 0);
+});
+test("hero and subsequent assemblies transition at configured boundaries", () => {
+  for (const hero of [true, false]) {
+    const rain = hero ? motion.heroRain : motion.rain,
+      assemble = hero ? motion.heroAssemble : motion.assemble;
+    assert.equal(phase(0, hero).state, "rain");
+    assert.equal(phase(rain, hero).state, "assemble");
+    assert.equal(phase(rain + assemble / 2, hero).progress, 0.5);
+    assert.deepEqual(phase(rain + assemble, hero), {
+      state: "ready",
+      progress: 1,
+    });
+  }
+});
+test("gaze stays within eyes and returns to neutral without a pointer", () => {
+  const rect = { left: 100, top: 100, width: 640, height: 590 };
+  for (const x of [-1e6, 0, 420, 1e6])
+    for (const y of [-1e6, 0, 395, 1e6]) {
+      const target = gazeTarget({ x, y }, rect);
+      assert.ok(Math.abs(target.x) <= motion.gazeLimitX);
+      assert.ok(Math.abs(target.y) <= motion.gazeLimitY);
+    }
+  assert.deepEqual(gazeTarget(null, rect), { x: 0, y: 0 });
+  assert.deepEqual(gazeTarget({ x: 420, y: 395 }, rect), { x: 0, y: 0 });
+});

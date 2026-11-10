@@ -13,6 +13,7 @@ const root = resolve(import.meta.dirname, 'public');
 const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.txt': 'text/plain' };
 const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/metrika.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const php2shellFiles = new Set(['/php2shell', '/php2shell/styles.css', '/php2shell/app.js']);
+const aiCodeFiles = new Set(['/ai-code/rain.svg', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
@@ -144,6 +145,12 @@ async function handle(req, res, database) {
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname === '/healthz') {
     return send(res, 200, 'text/plain', 'OK');
+  }
+  if (url.pathname === '/ai-code/' || url.pathname === '/ai-code/index.html') return send(res, 308, 'text/plain', 'Moved', { Location: '/ai-code' });
+  if (aiCodeFiles.has(url.pathname)) {
+    const path = url.pathname === '/ai-code' ? '/ai-code/index.html' : url.pathname;
+    try { return send(res, 200, mime[extname(path)], readFileSync(resolve(root, '.' + path))); }
+    catch { return send(res, 404, 'text/plain', 'Not found'); }
   }
   if (url.pathname === '/php2shell/' || url.pathname === '/php2shell/index.html') return send(res, 308, 'text/plain', 'Moved', { Location: '/php2shell' });
   if (php2shellFiles.has(url.pathname)) {
