@@ -849,3 +849,55 @@ header {
 #cat.volume-ready > svg {
   visibility: hidden;
 }
+/* Header mark follows the reference: a detailed ASCII outline above the wordmark. */
+.hero > header {
+  margin-bottom: 10px;
+  align-items: flex-start;
+}
+.brand {
+  width: 140px;
+  flex: 0 0 140px;
+  gap: 0;
+}
+.brand-cat {
+  display: block;
+  width: 128px;
+  height: 92px;
+  overflow: visible;
+}
+.brand-cat .brand-feature {
+  font-size: 18px;
+}
+.brand-cat .brand-feature:nth-last-child(-n + 3) {
+  font-size: 10px;
+}
+.brand .brand-name {
+  color: var(--ink);
+  font-family: "Courier New", monospace;
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+.hero > header > a:last-child {
+  margin-top: 35px;
+}
+@media (max-width: 760px) {
+  .hero > header {
+    margin-bottom: 35px;
+  }
+  .brand {
+    width: 112px;
+    flex-basis: 112px;
+  }
+  .brand-cat {
+    width: 102px;
+    height: 73px;
+  }
+  .brand .brand-name {
+    font-size: 28px;
+  }
+  .hero > header > a:last-child {
+    margin-top: 27px;
+  }
+}

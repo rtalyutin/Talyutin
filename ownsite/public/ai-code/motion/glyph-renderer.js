@@ -128,9 +128,10 @@ export function sectionTargets(section) {
         y: p.y + r.top - box.top,
       });
   }
-  for (const text of section.querySelectorAll("#cat svg text")) {
+  for (const text of section.querySelectorAll("svg text")) {
     const matrix = text.getCTM();
-    const cat = section.querySelector("#cat").getBoundingClientRect();
+    const cat = text.ownerSVGElement.getBoundingClientRect();
+    const style = getComputedStyle(text);
     const x = Number(text.getAttribute("x")),
       y = Number(text.getAttribute("y"));
     targets.push({
@@ -138,13 +139,20 @@ export function sectionTargets(section) {
       y: cat.top - box.top + matrix.d * y + matrix.f,
       char: text.textContent,
       color: text.getAttribute("fill"),
-      size: Math.max(2, matrix.a * parseFloat(getComputedStyle(text).fontSize)),
+      size: Math.max(2, matrix.a * parseFloat(style.fontSize)),
+      weight: style.fontWeight,
+      align:
+        style.textAnchor === "middle"
+          ? "center"
+          : style.textAnchor === "end"
+            ? "right"
+            : "left",
     });
   }
   const walker = document.createTreeWalker(section, NodeFilter.SHOW_TEXT);
   let node;
   while ((node = walker.nextNode())) {
-    if (!node.data.trim() || node.parentElement.closest("[data-glyph],#cat"))
+    if (!node.data.trim() || node.parentElement.closest("[data-glyph],svg"))
       continue;
     const style = getComputedStyle(node.parentElement);
     for (let i = 0; i < node.length; i++) {
@@ -265,6 +273,7 @@ export function createGlyphRenderer(canvas) {
         layer.ink.fillStyle = p.color;
         layer.ink.font = `${p.weight || "normal"} ${p.size}px monospace`;
         layer.ink.textBaseline = p.baseline || "alphabetic";
+        layer.ink.textAlign = p.align || "left";
         layer.ink.fillText(p.char, p.x, p.y);
       }
       context.drawImage(layer.sheet, r.left, r.top, layer.width, layer.height);
