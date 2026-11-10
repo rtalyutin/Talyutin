@@ -73,3 +73,36 @@ try {
 } catch {
   staticMode();
 }
+
+// Event names are fixed; no form values or personal data enter analytics.
+const eventNames = Object.freeze({ cta: 'cta_click', telegram: 'tg_click', case: 'case_open', details: 'details_open' });
+function track(name, params) {
+  const counter = window.aiCodeMetrikaId;
+  if (counter && typeof window.ym === 'function') window.ym(counter, 'reachGoal', name, params);
+}
+let anchorOpening = null;
+function openAnchor() {
+  let id;
+  try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
+  const target = document.getElementById(id);
+  if (target instanceof HTMLDetailsElement && !target.open) {
+    anchorOpening = target;
+    target.open = true;
+    if (target.dataset.case) track(eventNames.case, { code: target.dataset.case, source: 'direct_anchor' });
+    else if (target.dataset.detail) track(eventNames.details, { code: target.dataset.detail });
+  }
+}
+document.addEventListener('click', (event) => {
+  const link = event.target.closest('a');
+  if (!link) return;
+  if (link.dataset.cta) track(eventNames.cta, { block: link.closest('section')?.id, target: link.dataset.cta });
+  if ('telegram' in link.dataset) track(eventNames.telegram, { block: link.closest('section')?.id });
+});
+document.querySelectorAll('details').forEach((details) => details.addEventListener('toggle', () => {
+  if (anchorOpening === details) { anchorOpening = null; return; }
+  if (!details.open) return;
+  if (details.dataset.case) track(eventNames.case, { code: details.dataset.case, source: 'user' });
+  if (details.dataset.detail) track(eventNames.details, { code: details.dataset.detail });
+}));
+window.addEventListener('hashchange', openAnchor);
+openAnchor();

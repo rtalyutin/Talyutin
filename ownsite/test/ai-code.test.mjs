@@ -27,7 +27,7 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
   const page = await fetch(base + "/ai-code");
   assert.equal(page.status, 200);
   const html = await page.text();
-  assert.equal((html.match(/<section /g) || []).length, 8);
+  assert.equal((html.match(/<section /g) || []).length, 6);
   assert.match(html, /href="#process"/);
   assert.match(html, /href="https:\/\/t.me\/evieer"/);
   assert.doesNotMatch(
