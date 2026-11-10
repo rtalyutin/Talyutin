@@ -39,6 +39,7 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
     "styles.css",
     "boot.js",
     "main.js",
+    "events.js",
     "rain.svg",
     "motion/config.js",
     "motion/cat-gaze.js",
@@ -113,4 +114,22 @@ test("cat is a depth-bearing triangle mesh with surface-attached ASCII and trans
     rotated = transformPoint(original, 0.2, 0);
   assert.notEqual(projectPoint(original).x, projectPoint(rotated).x);
   assert.ok(Math.abs(Math.hypot(...original) - Math.hypot(...rotated)) < 1e-10);
+});
+
+test('commercial page has Telegram-only intake, confirmed names, canonical and no fictional cases', async t => {
+  const server = createServer(createHandler({}));
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/ai-code`);
+  const html = await response.text();
+  assert.match(html, /Продукт зарабатывает/);
+  assert.doesNotMatch(html, /пилот|AI-прототип|<form\b|<input\b/i);
+  assert.match(html, /данные клиентов/);
+  assert.match(html, /href="#request"/);
+  assert.match(html, /Илья Еремин/);
+  assert.match(html, /Роман Талютин/);
+  assert.match(html, /rel="canonical" href="https:\/\/talyutin.ru\/ai-code"/);
+  assert.match(html, /Подтверждённые материалы для публикации пока не предоставлены/);
+  assert.doesNotMatch(html, /<form\b|<input\b|<textarea\b|hh\.ru|\{\{AI_CODE_METRIKA_ID\}\}/);
+  assert.equal(response.headers.get('x-robots-tag'), process.env.ALLOW_INDEXING === '1' ? null : 'noindex, nofollow');
 });

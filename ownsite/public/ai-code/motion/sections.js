@@ -54,7 +54,8 @@ export function createSections(sections, renderer, scheduler, onReady) {
     scheduler.add(task);
   };
   const completeTarget = () => {
-    const id = decodeURIComponent(location.hash.slice(1));
+    let id;
+    try { id = decodeURIComponent(location.hash.slice(1)); } catch { return; }
     const record = records.find((r) => r.element.id === id || r.element.querySelector(`[id="${CSS.escape(id)}"]`));
     if (record) finish(record);
     renderer.clear();

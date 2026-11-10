@@ -50,10 +50,11 @@ export function decorateText(element) {
   const rect = element.getBoundingClientRect();
   if (!rect.width || !rect.height) return [];
   const mask = document.createElement("canvas");
-  mask.width = Math.ceil(rect.width);
-  mask.height = Math.ceil(rect.height);
+  mask.width = Math.ceil(rect.width) * 2;
+  mask.height = Math.ceil(rect.height) * 2;
   const context = mask.getContext("2d", { willReadFrequently: true });
   if (!context) throw new Error("Canvas unavailable");
+  context.scale(2, 2);
   context.textBaseline = "top";
   const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
   let node;
@@ -81,15 +82,15 @@ export function decorateText(element) {
   const decoration = document.createElement("canvas");
   decoration.className = "glyph-decoration";
   decoration.setAttribute("aria-hidden", "true");
-  decoration.width = mask.width * 2;
-  decoration.height = mask.height * 2;
+  decoration.width = mask.width;
+  decoration.height = mask.height;
   const ink = decoration.getContext("2d");
   ink.scale(2, 2);
   ink.font = `bold ${step + 2}px monospace`;
   ink.textBaseline = "middle";
-  for (let y = 1; y < mask.height; y += step)
-    for (let x = 1; x < mask.width; x += step) {
-      const i = (y * mask.width + x) * 4;
+  for (let y = 1; y < mask.height / 2; y += step)
+    for (let x = 1; x < mask.width / 2; x += step) {
+      const i = (y * 2 * mask.width + x * 2) * 4;
       if (image.data[i + 3] < 100) continue;
       const color = `rgb(${image.data[i]},${image.data[i + 1]},${image.data[i + 2]})`;
       const char = "@#08"[(x * 3 + y * 7) % 4];
@@ -105,6 +106,18 @@ export function decorateText(element) {
         baseline: "middle",
       });
     }
+  if (element.matches("h1, h2, h3")) {
+    // Keep ASCII texture inside the letter silhouettes, with a quiet ink layer
+    // beneath the gaps. Assembly still captures ASCII; only the resting text
+    // becomes less ragged, especially at mobile heading sizes.
+    ink.globalCompositeOperation = "destination-in";
+    ink.drawImage(mask, 0, 0, mask.width / 2, mask.height / 2);
+    ink.globalCompositeOperation = "destination-over";
+    ink.globalAlpha = motion.headingInkOpacity;
+    ink.drawImage(mask, 0, 0, mask.width / 2, mask.height / 2);
+    ink.globalAlpha = 1;
+    ink.globalCompositeOperation = "source-over";
+  }
   element.append(decoration);
   element.classList.add("glyph-ready");
   element.glyphPoints = points;
