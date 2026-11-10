@@ -5,6 +5,7 @@ export const motion = Object.freeze({
   rain: 220,
   assemble: 1050,
   maxDpr: 1.5,
+  headingInkOpacity: 0.72,
   rainColumnWidth: 14,
   rainRowHeight: 12,
   rainFontSize: 11,
