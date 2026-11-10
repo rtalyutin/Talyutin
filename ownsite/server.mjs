@@ -13,7 +13,7 @@ const root = resolve(import.meta.dirname, 'public');
 const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.txt': 'text/plain' };
 const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/metrika.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const php2shellFiles = new Set(['/php2shell', '/php2shell/styles.css', '/php2shell/app.js']);
-const aiCodeFiles = new Set(['/ai-code/rain.svg', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
+const aiCodeFiles = new Set(['/ai-code/rain.svg', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-volume.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',

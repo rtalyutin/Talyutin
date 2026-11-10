@@ -5,7 +5,12 @@ import { readFileSync } from "node:fs";
 import { createHandler } from "../server.mjs";
 import { phase, motion } from "../public/ai-code/motion/config.js";
 import { gazeTarget } from "../public/ai-code/motion/cat-gaze.js";
-import { catSvg } from "../public/ai-code/motion/cat-model.js";
+import {
+  catSvg,
+  createCatModel,
+  transformPoint,
+  projectPoint,
+} from "../public/ai-code/motion/cat-model.js";
 
 test("AI-code serves all assets under existing CSP without the portfolio backend and restricts paths", async (t) => {
   let calls = 0;
@@ -38,6 +43,7 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
     "motion/config.js",
     "motion/cat-gaze.js",
     "motion/cat-model.js",
+    "motion/cat-volume.js",
     "motion/glyph-renderer.js",
     "motion/sections.js",
   ]) {
@@ -91,4 +97,20 @@ test("gaze stays within eyes and returns to neutral without a pointer", () => {
     }
   assert.deepEqual(gazeTarget(null, rect), { x: 0, y: 0 });
   assert.deepEqual(gazeTarget({ x: 420, y: 395 }, rect), { x: 0, y: 0 });
+});
+
+test("cat is a depth-bearing triangle mesh with surface-attached ASCII and transparent material", () => {
+  const model = createCatModel();
+  assert.equal(model.material.opacity, 0);
+  assert.equal(model.material.transparent, true);
+  assert.ok(model.triangles.length > 3000);
+  assert.ok(model.glyphs.length > 3000);
+  const z = model.triangles.flatMap((t) => t.vertices.map((v) => v.p[2]));
+  assert.ok(Math.max(...z) - Math.min(...z) > 1);
+  assert.ok(model.triangles.some((t) => t.part === "ear"));
+  assert.ok(model.glyphs.some((p) => p.part === "pupil"));
+  const original = [0.8, 0.2, 0.5],
+    rotated = transformPoint(original, 0.2, 0);
+  assert.notEqual(projectPoint(original).x, projectPoint(rotated).x);
+  assert.ok(Math.abs(Math.hypot(...original) - Math.hypot(...rotated)) < 1e-10);
 });
