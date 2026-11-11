@@ -19,7 +19,7 @@ try {
     scheduler = createScheduler(staticMode);
     controller = createStudioMotion([...document.querySelectorAll('main > section')], document.querySelector('#code-layer'), scheduler);
     const cat = document.querySelector('#cat');
-    // Start with a cached SVG image. Allocate WebGL only on a desktop interaction.
+    // Start with a separate SVG image. Allocate WebGL only on a desktop interaction.
     const activateCat = event => {
       if (reduced.matches || cat.getBoundingClientRect().bottom < 0) return;
       window.removeEventListener('pointermove', activateCat);
