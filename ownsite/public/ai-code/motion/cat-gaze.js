@@ -16,9 +16,8 @@ export function gazeTarget(pointer, rect) {
       ) * motion.gazeLimitY,
   };
 }
-export function createCatGaze(cat, scheduler, isReady, volume) {
-  const pupils = [...cat.querySelectorAll("[data-pupil]")];
-  let pointer = null,
+export function createCatGaze(cat, scheduler, isReady, volume, initialPointer = null) {
+  let pointer = initialPointer,
     current = { x: 0, y: 0 },
     visible = true,
     enabled = true,
@@ -34,8 +33,6 @@ export function createCatGaze(cat, scheduler, isReady, volume) {
     current.x += (target.x - current.x) * ease;
     current.y += (target.y - current.y) * ease;
     volume?.render(current);
-    for (const pupil of pupils)
-      pupil.setAttribute("transform", `translate(${current.x} ${current.y})`);
     const moving =
       Math.abs(current.x - target.x) + Math.abs(current.y - target.y) > 0.05;
     if (!moving) lastTime = 0;
@@ -75,7 +72,6 @@ export function createCatGaze(cat, scheduler, isReady, volume) {
       enabled = false;
       volume?.neutral();
       scheduler.remove(task);
-      for (const pupil of pupils) pupil.removeAttribute("transform");
     },
   };
 }

@@ -7,6 +7,8 @@ import { phase, motion } from "../public/ai-code/motion/config.js";
 import { gazeTarget } from "../public/ai-code/motion/cat-gaze.js";
 import {
   catSvg,
+  catGlyphs,
+  glyphAlphabet,
   createCatModel,
   transformPoint,
   projectPoint,
@@ -34,7 +36,8 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
     page.headers.get("content-security-policy"),
     /unsafe-inline|unsafe-eval/,
   );
-  assert.ok(html.includes(catSvg()), "static cat matches animation model");
+  assert.match(html, /src="\/ai-code\/cat-static.svg" width="640" height="590" alt=""/);
+  assert.equal(readFileSync(new URL("../public/ai-code/cat-static.svg", import.meta.url), "utf8"), catSvg(), "static cat matches animation model");
   for (const file of [
     "styles.css",
     "boot.js",
@@ -42,6 +45,7 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
     "events.js",
     "motion/studio.js",
     "rain.svg",
+    "cat-static.svg",
     "motion/config.js",
     "motion/cat-gaze.js",
     "motion/cat-model.js",
@@ -129,4 +133,25 @@ test("cat is a depth-bearing triangle mesh with surface-attached ASCII and trans
     rotated = transformPoint(original, 0.2, 0);
   assert.notEqual(projectPoint(original).x, projectPoint(rotated).x);
   assert.ok(Math.abs(Math.hypot(...original) - Math.hypot(...rotated)) < 1e-10);
+});
+
+// Catch invalid normals / runaway geometry before it reaches the GPU, and keep
+// the complete silhouette within its canvas through the allowed pointer range.
+test("cat geometry stays finite, bounded and visible through its motion range", () => {
+  const model = createCatModel();
+  assert.ok(model.triangles.length < 30000);
+  assert.ok(model.glyphs.length < 16000);
+  for (const g of model.glyphs) {
+    assert.ok([...g.position, ...g.normal, g.size].every(Number.isFinite));
+    assert.ok(Math.abs(Math.hypot(...g.normal) - 1) < 1e-8);
+    assert.ok(glyphAlphabet.includes(g.char));
+    for (const yaw of [-0.18, 0, 0.18]) for (const pitch of [-0.084, 0.084]) {
+      const p = projectPoint(transformPoint(g.position, yaw, pitch));
+      assert.ok(p.x >= 0 && p.x <= 640 && p.y >= 0 && p.y <= 590, `clipped ${g.part}`);
+    }
+  }
+  const visible = catGlyphs();
+  for (const part of ["pupil", "iris", "nose", "innerEar", "whisker"])
+    assert.ok(visible.some(g => g.part === part), `${part} survives depth occlusion`);
+  assert.ok(visible.every(g => g.matrix.every(Number.isFinite)));
 });

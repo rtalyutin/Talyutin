@@ -19,13 +19,15 @@ try {
     scheduler = createScheduler(staticMode);
     controller = createStudioMotion([...document.querySelectorAll('main > section')], document.querySelector('#code-layer'), scheduler);
     const cat = document.querySelector('#cat');
-    // Start with the static SVG. Allocate WebGL only on a desktop interaction.
-    const activateCat = () => {
+    // Start with a cached SVG image. Allocate WebGL only on a desktop interaction.
+    const activateCat = event => {
       if (reduced.matches || cat.getBoundingClientRect().bottom < 0) return;
       window.removeEventListener('pointermove', activateCat);
       try { volume = createCatVolume(cat); } catch { /* The SVG is a complete fallback. */ }
-      gaze = createCatGaze(cat, scheduler, () => controller.records[0].state === 'ready', volume);
-      gaze.wake();
+      if (volume) {
+        gaze = createCatGaze(cat, scheduler, () => controller.records[0].state === 'ready', volume, { x: event.clientX, y: event.clientY });
+        gaze.wake();
+      } else cat.dataset.renderer = 'fallback';
     };
     if (matchMedia('(pointer: fine)').matches) window.addEventListener('pointermove', activateCat, { passive: true });
   } else staticMode();

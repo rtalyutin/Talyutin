@@ -1,6 +1,11 @@
-import { createCatModel, camera } from "./cat-model.js";
+import {
+  createCatModel,
+  camera,
+  lightDirection,
+  glyphAlphabet,
+} from "./cat-model.js";
 
-// Transparent depth mesh + alpha-atlas glyph billboards anchored in model space.
+// Transparent depth mesh + code glyphs tangent to the sculpted surface.
 // The mesh writes depth only: no solid polygon or rectangular texture is visible.
 export function createCatVolume(container) {
   const canvas = document.createElement("canvas");
@@ -50,17 +55,31 @@ export function createCatVolume(container) {
     `precision mediump float;void main(){gl_FragColor=vec4(0.);}`,
   );
   const glyphProgram = program(
-    `attribute vec3 aPosition;attribute vec3 aColor;attribute vec2 aCorner;attribute float aLetter;attribute float aPupil;${transform}
+    `attribute vec3 aPosition;attribute vec3 aColor;attribute vec3 aNormal;attribute float aSize;attribute vec2 aCorner;attribute float aLetter;attribute float aPupil;${transform}
  varying vec2 vUv;varying vec3 vColor;
- void main(){vec4 p=project(aPosition,aPupil);float size=uViewport.x/640.;p.xy+=aCorner*vec2(5.8,9.)*size/uViewport*2.*p.w;
- gl_Position=p;vUv=vec2((aLetter+aCorner.x+.5)/12.,aCorner.y+.5);vColor=aColor;}`,
+ void main(){
+ vec3 reference=abs(aNormal.y)>.99?vec3(0.,0.,-1.):vec3(0.,1.,0.);
+ vec3 right=normalize(cross(reference,aNormal));vec3 up=cross(aNormal,right);
+ vec3 anchor=aPosition+(aCorner.x*right*6.67+aCorner.y*up*10.)/240.*aSize;
+ vec4 p=project(anchor,aPupil);
+ vec3 light=vec3(${lightDirection.map((v) => v.toFixed(5)).join(",")});
+ float cy=cos(uTurn.x),sy=sin(uTurn.x),cx=cos(uTurn.y),sx=sin(uTurn.y);
+ vec3 n=vec3(aNormal.x*cy+aNormal.z*sy,aNormal.y,-aNormal.x*sy+aNormal.z*cy);
+ n=vec3(n.x,n.y*cx-n.z*sx,n.y*sx+n.z*cx);
+ float lighting=(.45+.55*max(0.,dot(n,light)))/(.45+.55*max(0.,dot(aNormal,light)));
+ gl_Position=p;vUv=vec2((aLetter+aCorner.x+.5)/${glyphAlphabet.length}.,aCorner.y+.5);vColor=clamp(aColor*lighting,0.,1.);}`,
     `precision mediump float;uniform sampler2D uAtlas;varying vec2 vUv;varying vec3 vColor;
  void main(){float alpha=texture2D(uAtlas,vUv).a;if(alpha<.08)discard;gl_FragColor=vec4(vColor,alpha);}`,
   );
-  const model = createCatModel(),
-    depth = [],
-    glyphs = [];
-  const letters = "01:+*0@#8%;=";
+  const model = createCatModel();
+  const depthVertexCount = model.triangles.length * 3;
+  const glyphVertexCount = model.glyphs.length * 6;
+  const depth = new Float32Array(depthVertexCount * 4);
+  const glyphs = new Float32Array(glyphVertexCount * 14);
+  let depthOffset = 0,
+    glyphOffset = 0;
+  const letters = glyphAlphabet;
+  const followsGaze = (part) => ["pupil", "iris", "glint"].includes(part);
   const corners = [
     [-0.5, -0.5],
     [0.5, -0.5],
@@ -70,41 +89,48 @@ export function createCatVolume(container) {
     [0.5, 0.5],
   ];
   for (const triangle of model.triangles)
-    for (const v of triangle.vertices)
-      depth.push(...v.p, triangle.part === "pupil" ? 1 : 0);
+    for (const v of triangle.vertices) {
+      depth.set(v.p, depthOffset);
+      depth[depthOffset + 3] = followsGaze(triangle.part) ? 1 : 0;
+      depthOffset += 4;
+    }
   for (const glyph of model.glyphs) {
     const color = glyph.color
       .slice(1)
       .match(/../g)
       .map((c) => parseInt(c, 16) / 255);
-    const p = glyph.position.map((x, i) => x + glyph.normal[i] * 0.018);
-    for (const corner of corners)
-      glyphs.push(
-        ...p,
-        ...color,
-        ...corner,
-        Math.max(0, letters.indexOf(glyph.char)),
-        glyph.part === "pupil" ? 1 : 0,
-      );
+    const p = glyph.position.map((x, i) => x + glyph.normal[i] * 0.009);
+    for (const corner of corners) {
+      glyphs.set(p, glyphOffset);
+      glyphs.set(color, glyphOffset + 3);
+      glyphs.set(corner, glyphOffset + 6);
+      glyphs[glyphOffset + 8] = Math.max(0, letters.indexOf(glyph.char));
+      glyphs[glyphOffset + 9] = followsGaze(glyph.part) ? 1 : 0;
+      glyphs.set(glyph.normal, glyphOffset + 10);
+      glyphs[glyphOffset + 13] = glyph.size;
+      glyphOffset += 14;
+    }
   }
+
   function buffer(data) {
     const b = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, b);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
     resources.push(() => gl.deleteBuffer(b));
     return b;
   }
   const depthBuffer = buffer(depth),
     glyphBuffer = buffer(glyphs);
   const atlas = document.createElement("canvas");
-  atlas.width = 12 * 32;
+  atlas.width = letters.length * 32;
   atlas.height = 48;
   const ink = atlas.getContext("2d");
-  ink.font = "bold 32px monospace";
+  ink.font = "bold 36px monospace";
   ink.fillStyle = "#fff";
   ink.textAlign = "center";
   ink.textBaseline = "middle";
-  for (let i = 0; i < 12; i++) ink.fillText(letters[i], i * 32 + 16, 24);
+  for (let i = 0; i < letters.length; i++)
+    ink.fillText(letters[i], i * 32 + 16, 24);
   const texture = gl.createTexture();
   resources.push(() => gl.deleteTexture(texture));
   gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -135,13 +161,13 @@ export function createCatVolume(container) {
     );
     gl.uniform2f(
       gl.getUniformLocation(p, "uTurn"),
-      current.x * 0.006,
-      current.y * 0.005,
+      current.x * 0.018,
+      current.y * 0.012,
     );
     gl.uniform2f(
       gl.getUniformLocation(p, "uGaze"),
-      current.x * 0.006,
-      -current.y * 0.006,
+      current.x * 0.004,
+      -current.y * 0.004,
     );
   }
   function render(value = current) {
@@ -167,7 +193,7 @@ export function createCatVolume(container) {
     attribute(depthProgram, "aPupil", 1, 4, 3);
     gl.colorMask(false, false, false, false);
     gl.depthMask(true);
-    gl.drawArrays(gl.TRIANGLES, 0, depth.length / 4);
+    gl.drawArrays(gl.TRIANGLES, 0, depthVertexCount);
     gl.colorMask(true, true, true, true);
     gl.depthMask(false);
     gl.enable(gl.BLEND);
@@ -176,12 +202,14 @@ export function createCatVolume(container) {
     uniforms(glyphProgram);
     gl.uniform1i(gl.getUniformLocation(glyphProgram, "uAtlas"), 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, glyphBuffer);
-    attribute(glyphProgram, "aPosition", 3, 10, 0);
-    attribute(glyphProgram, "aColor", 3, 10, 3);
-    attribute(glyphProgram, "aCorner", 2, 10, 6);
-    attribute(glyphProgram, "aLetter", 1, 10, 8);
-    attribute(glyphProgram, "aPupil", 1, 10, 9);
-    gl.drawArrays(gl.TRIANGLES, 0, glyphs.length / 10);
+    attribute(glyphProgram, "aPosition", 3, 14, 0);
+    attribute(glyphProgram, "aColor", 3, 14, 3);
+    attribute(glyphProgram, "aCorner", 2, 14, 6);
+    attribute(glyphProgram, "aLetter", 1, 14, 8);
+    attribute(glyphProgram, "aPupil", 1, 14, 9);
+    attribute(glyphProgram, "aNormal", 3, 14, 10);
+    attribute(glyphProgram, "aSize", 1, 14, 13);
+    gl.drawArrays(gl.TRIANGLES, 0, glyphVertexCount);
     gl.depthMask(true);
     gl.disable(gl.BLEND);
   }

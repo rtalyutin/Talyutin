@@ -83,10 +83,10 @@ a:hover > .arrow { transform: translate(2px,-2px); }
 .axis::after { width: 1px; height: 8px; left: 3px; }
 .axis-x { top: calc(50% - 4px); left: 0; }
 .axis-y { top: calc(50% - 4px); right: 0; }
-#cat { position: relative; width: 100%; aspect-ratio: 640/590; filter: saturate(.68) brightness(.9); }
-#cat svg { display: block; width: 100%; height: auto; }
+#cat { position: relative; width: 100%; aspect-ratio: 640/590; }
+#cat > img { display: block; width: 100%; height: auto; }
 #cat .cat-volume { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-#cat.volume-ready > svg { visibility: hidden; }
+#cat.volume-ready > img { visibility: hidden; }
 figcaption { font: 10px/1.6 var(--mono); color: var(--muted); text-align: center; padding: 12px 0 5px; }
 .hero-bottom { display: flex; justify-content: space-between; align-items: center; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font: 10px/1.5 var(--mono); letter-spacing: .06em; }
 .hero-bottom > span:last-child { display: flex; align-items: center; gap: 12px; }
