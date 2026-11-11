@@ -228,3 +228,5 @@ h3 { font-size: 23px; letter-spacing: -.04em; margin-bottom: 10px; }
   .boot-intro h1, .boot-intro .cat-stage { opacity: 1; }
 }
 @media (forced-colors: active) { .button { border: 1px solid ButtonText; } .arrow, .plus { forced-color-adjust: auto; } }
+
+.site-footer{display:block}.footer-links{display:flex;justify-content:space-between;align-items:center;gap:24px}.footer-legal{margin-top:24px;padding-top:24px;border-top:1px solid #ffffff24;font:400 14px/1.6 Onest,Arial,sans-serif;color:#c1d1c2}.footer-legal dl{display:flex;flex-wrap:wrap;gap:8px 32px;margin:8px 0 0}.footer-legal dl>div{display:flex;gap:8px}.footer-legal dt{color:#a9bfad}.footer-legal dd{margin:0;font-variant-numeric:tabular-nums}@media(max-width:700px){.footer-legal dl{flex-direction:column;gap:6px}.footer-legal{font-size:14px}}
