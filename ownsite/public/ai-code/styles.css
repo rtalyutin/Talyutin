@@ -431,7 +431,7 @@ h1 { font-size: clamp(52px,6.9vw,98px); line-height: .99; margin: 18px 0 30px; f
 .footer-address a { overflow-wrap: anywhere; max-width: 100%; }
 
 /* The team keeps its dark surface in both Matrix themes. */
-#team.founders { --ink: #dcf6e5; --muted: #accbb7; --green: #80eaaa; --line: #3d654b; color-scheme: dark; background: #06100b; color: var(--ink); }
+#team.founders { --ink: #dcf6e5; --muted: #accbb7; --green: #80eaaa; --line: #3d654b; color-scheme: dark; background: #003c27; color: var(--ink); }
 .founders-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 40px; align-items: start; border-top: 1px solid var(--line); padding-top: 30px; }
 .founder { min-width: 0; }
 .founder-portrait { position: relative; isolation: isolate; overflow: hidden; width: 100%; aspect-ratio: 4 / 3; margin-bottom: 28px; background: #102018; }
