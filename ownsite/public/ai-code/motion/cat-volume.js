@@ -55,11 +55,11 @@ export function createCatVolume(container) {
     `precision mediump float;void main(){gl_FragColor=vec4(0.);}`,
   );
   const glyphProgram = program(
-    `attribute vec3 aPosition;attribute vec3 aColor;attribute vec3 aNormal;attribute float aSize;attribute vec2 aCorner;attribute float aLetter;attribute float aPupil;${transform}
+    `attribute vec3 aPosition;attribute vec3 aColor;attribute vec3 aNormal;attribute vec3 aTangentNormal;attribute float aSize;attribute vec2 aCorner;attribute float aLetter;attribute float aPupil;${transform}
  varying vec2 vUv;varying vec3 vColor;
  void main(){
- vec3 reference=abs(aNormal.y)>.99?vec3(0.,0.,-1.):vec3(0.,1.,0.);
- vec3 right=normalize(cross(reference,aNormal));vec3 up=cross(aNormal,right);
+ vec3 reference=abs(aTangentNormal.y)>.99?vec3(0.,0.,-1.):vec3(0.,1.,0.);
+ vec3 right=normalize(cross(reference,aTangentNormal));vec3 up=cross(aTangentNormal,right);
  vec3 anchor=aPosition+(aCorner.x*right*6.67+aCorner.y*up*10.)/240.*aSize;
  vec4 p=project(anchor,aPupil);
  vec3 light=vec3(${lightDirection.map((v) => v.toFixed(5)).join(",")});
@@ -75,7 +75,8 @@ export function createCatVolume(container) {
   const depthVertexCount = model.triangles.length * 3;
   const glyphVertexCount = model.glyphs.length * 6;
   const depth = new Float32Array(depthVertexCount * 4);
-  const glyphs = new Float32Array(glyphVertexCount * 14);
+  const glyphStride = 17;
+  const glyphs = new Float32Array(glyphVertexCount * glyphStride);
   let depthOffset = 0,
     glyphOffset = 0;
   const letters = glyphAlphabet;
@@ -108,7 +109,10 @@ export function createCatVolume(container) {
       glyphs[glyphOffset + 9] = followsGaze(glyph.part) ? 1 : 0;
       glyphs.set(glyph.normal, glyphOffset + 10);
       glyphs[glyphOffset + 13] = glyph.size;
-      glyphOffset += 14;
+      // Lift and light with the actual surface normal; orient the letters with
+      // a separate, optional tangent frame to keep the frontal portrait legible.
+      glyphs.set(glyph.tangentNormal || glyph.normal, glyphOffset + 14);
+      glyphOffset += glyphStride;
     }
   }
 
@@ -202,13 +206,14 @@ export function createCatVolume(container) {
     uniforms(glyphProgram);
     gl.uniform1i(gl.getUniformLocation(glyphProgram, "uAtlas"), 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, glyphBuffer);
-    attribute(glyphProgram, "aPosition", 3, 14, 0);
-    attribute(glyphProgram, "aColor", 3, 14, 3);
-    attribute(glyphProgram, "aCorner", 2, 14, 6);
-    attribute(glyphProgram, "aLetter", 1, 14, 8);
-    attribute(glyphProgram, "aPupil", 1, 14, 9);
-    attribute(glyphProgram, "aNormal", 3, 14, 10);
-    attribute(glyphProgram, "aSize", 1, 14, 13);
+    attribute(glyphProgram, "aPosition", 3, glyphStride, 0);
+    attribute(glyphProgram, "aColor", 3, glyphStride, 3);
+    attribute(glyphProgram, "aCorner", 2, glyphStride, 6);
+    attribute(glyphProgram, "aLetter", 1, glyphStride, 8);
+    attribute(glyphProgram, "aPupil", 1, glyphStride, 9);
+    attribute(glyphProgram, "aNormal", 3, glyphStride, 10);
+    attribute(glyphProgram, "aSize", 1, glyphStride, 13);
+    attribute(glyphProgram, "aTangentNormal", 3, glyphStride, 14);
     gl.drawArrays(gl.TRIANGLES, 0, glyphVertexCount);
     gl.depthMask(true);
     gl.disable(gl.BLEND);

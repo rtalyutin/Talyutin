@@ -11,19 +11,19 @@ const normalize = (v) => {
   return v.map((x) => x / length);
 };
 const clamp = (v, low = 0, high = 1) => Math.min(high, Math.max(low, v));
-export const camera = { distance: 5, focal: 3.35, centerY: 0.16 };
+export const camera = { distance: 5, focal: 3.65, centerY: 0.23 };
 export const lightDirection = normalize([-0.75, 0.85, 0.55]);
 export const glyphAlphabet = ".·:;01+=*#@89";
 export const eyes = [-1, 1].map((side) => ({
-  x: side * 0.455,
-  y: 0.30,
-  z: 0.875,
+  x: side * 0.43,
+  y: 0.16,
+  z: 0.718,
 }));
 const materials = {
-  fur: ["#123f2c", "#57a146"],
+  fur: ["#0b3c29", "#468467"],
   stripe: ["#153f2d", "#348044"],
-  innerEar: ["#164a32", "#3d8150"],
-  muzzle: ["#286947", "#88c967"],
+  innerEar: ["#13442f", "#658f76"],
+  muzzle: ["#205a40", "#60927a"],
   eye: ["#699b47", "#b2d982"],
   iris: ["#347844", "#7ebc4f"],
   pupil: ["#103b2a", "#194b32"],
@@ -86,6 +86,7 @@ export function createCatModel() {
     return true;
   }
   function triangle(a, b, c, part, density = 1600) {
+    if(typeof part === "function") part=part(a.p.map((v,k)=>(v+b.p[k]+c.p[k])/3));
     const face = cross(sub(b.p, a.p), sub(c.p, a.p));
     const area = Math.hypot(...face) / 2;
     if (area < 1e-9) return;
@@ -237,229 +238,156 @@ export function createCatModel() {
         );
       },
       segments,
-      6,
+      4,
       part,
       density,
     );
   }
-  ellipsoid(
-    [0, -0.10, -0.04],
-    [0.94, 0.98, 0.71],
-    "head",
-    1800,
-    (p) => {
-      const [x, y, z] = p,
-        front = Math.max(0, z + 0.04) / 0.71;
-      const bridge =
-        0.13 * Math.exp(-((x / 0.22) ** 2) - ((y - 0.07) / 0.43) ** 2);
-      const socket =
-        0.075 *
-        Math.exp(
-          -(((Math.abs(x) - 0.455) / 0.28) ** 2) - ((y - 0.12) / 0.22) ** 2,
-        );
-      return [
-        x * (1 + 0.065 * Math.exp(-(((y + 0.16) / 0.36) ** 2))),
-        y,
-        z + (bridge - socket) * front ** 3,
-      ];
-    },
-    34,
-    64,
-  );
-  for (const side of [-1, 1]) {
-    const ear = (u, t, back = false) => {
-      const a = u * 2 - 1;
-      return [
-        side *
-          ((0.71 + 0.33 * a) * (1 - t) +
-            0.94 * t +
-            0.035 * a * Math.sin(Math.PI * t)),
-        0.43 + 0.99 * t - 0.12 * a * (1 - t),
-        0.11 * (1 - t) -
-          0.045 * t +
-          (back ? -0.19 * (1 - t) : 0.12 * Math.sin(Math.PI * t) * (1 - a * a)),
-      ];
+  // One smooth implicit sculpt joins the skull, cheeks, whisker pads and chin.
+  // Radial root-finding gives a closed surface, with no intersecting facial blobs.
+  const volumes=[
+    [[0,-.04,-.08],[.91,.71,.67]],
+    [[-.63,-.16,.02],[.29,.34,.48]], [[.63,-.16,.02],[.29,.34,.48]],
+    [[-.205,-.30,.60],[.30,.225,.31]], [[.205,-.30,.60],[.30,.225,.31]],
+    [[0,-.53,.43],[.38,.19,.27]],
+  ];
+  const distance=(p,c,r)=>{
+    const x=(p[0]-c[0])/r[0],y=(p[1]-c[1])/r[1],z=(p[2]-c[2])/r[2];
+    const a=Math.sqrt(x*x+y*y+z*z);
+    const b=Math.sqrt((x/r[0])**2+(y/r[1])**2+(z/r[2])**2);
+    return b>1e-8?a*(a-1)/b:-Math.min(...r);
+  };
+  const field=p=>{
+    let a=distance(p,...volumes[0]);
+    for(let i=1;i<volumes.length;i++) {
+      const b=distance(p,...volumes[i]);
+      const h=Math.max(.13-Math.abs(a-b),0)/.13;
+      a=Math.min(a,b)-h*h*.13*.25;
+    }
+    return a;
+  };
+  const sculpt=direction=>{
+    let lo=0,hi=1.65;
+    for(let i=0;i<20;i++) {
+      const t=(lo+hi)/2;
+      const p=direction.map((v,k)=>v*t+(k===1?-.04:0));
+      if(field(p)<0) lo=t; else hi=t;
+    }
+    const p=direction.map((v,k)=>v*(lo+hi)/2+(k===1?-.04:0));
+    const [x,y,z]=p;
+    const front=Math.max(0,z)/.8;
+    const bridge=.085*Math.exp(-((x/.17)**2)-((y-.02)/.31)**2);
+    const socket=.095*Math.exp(-(((Math.abs(x)-.43)/.23)**2)-((y-.16)/.19)**2);
+    p[2]+=(bridge-socket)*Math.min(1,front)**2;
+    return p;
+  };
+  ellipsoid([0,0,0],[1,1,1],p=>p[1]<-.46&&Math.abs(p[0])<.42?"chin":p[1]<-.13&&Math.abs(p[0])<.5&&p[2]>.6?"muzzle":"head",1800,sculpt,40,72);
+  // Curved, thick pinnae. Rounded tips, a recessed concha and rolled rims.
+  for(const side of [-1,1]) {
+    const ear=(u,t,back=false)=>{
+      const a=2*u-1;
+      return [side*(.57+.25*t+.25*a*(1-t)**.62),
+        .30+.78*t-.15*a*(1-t),
+        .09+.17*(1-t)-.20*(1-t)**3+(back?-.12*(1-t)**.45:
+          .11*a*a*Math.sin(Math.PI*t)-.12*(1-a*a)*Math.sin(Math.PI*t))];
     };
-    surface((u, t) => ear(u, t), 18, 24, "ear", 1700);
-    surface((u, t) => ear(u, t, true), 18, 24, "ear", 1400, [
-      side * 0.78,
-      0.7,
-      0.2,
-    ]);
-    surface(
-      (u, t) => {
-        const p = ear(0.5 + (u - 0.5) * 0.7 * (1 - t), 0.13 + t * 0.72);
-        return [p[0], p[1], p[2] + 0.012];
-      },
-      14,
-      22,
-      "innerEar",
-      2200,
-    );
-    for (const edge of [0, 1])
-      surface(
-        (u, t) => {
-          const a = ear(edge, t),
-            b = ear(edge, t, true);
-          return a.map((v, k) => v * (1 - u) + b[k] * u);
-        },
-        3,
-        24,
-        "ear",
-        1500,
-      );
-  }
-  ellipsoid([0, -0.76, 0.31], [0.47, 0.30, 0.39], "chin", 1500);
-  for (const side of [-1, 1])
-    ellipsoid(
-      [side * 0.235, -0.19, 0.565],
-      [0.365, 0.255, 0.335],
-      "muzzle",
-      1800,
-    );
-  for (const e of eyes) {
-    const side = Math.sign(e.x);
-    const eyePoint = (u, v) => [
-      e.x + 0.255 * u,
-      e.y + 0.145 * (1 - u * u) ** 0.7 * v + 0.038 * u * side,
-      0.65 -
-        0.125 * u * side +
-        0.172 * (1 - u * u) * Math.sqrt(Math.max(0, 1 - v * v)),
-    ];
-    surface((u, v) => eyePoint(u * 2 - 1, v * 2 - 1), 28, 20, "eye", 2400);
-    ellipsoid(
-      [e.x, e.y, 0.805],
-      [0.082, 0.132, 0.04],
-      "iris",
-      2400,
-      (p) => p,
-      18,
-      28,
-    );
-    ellipsoid(
-      [e.x, e.y, e.z - 0.026],
-      [0.029, 0.109, 0.026],
-      "pupil",
-      4800,
-      (p) => p,
-      18,
-      24,
-    );
-    ellipsoid(
-      [e.x - 0.018, e.y + 0.054, e.z + 0.003],
-      [0.014, 0.022, 0.009],
-      "glint",
-      6000,
-      (p) => p,
-      8,
-      12,
-    );
-    for (const upper of [-1, 1])
-      tube(
-        (t) => {
-          const p = eyePoint(t * 2 - 1, upper);
-          p[2] += 0.012;
-          return p;
-        },
-        upper > 0 ? 0.013 : 0.009,
-        "lid",
-        30,
-        4000,
-      );
-  }
-  // Softly convex triangular nose: the philtrum and smile follow the muzzle.
-  surface(
-    (u, v) => {
-      const width = 0.125 * (1 - v),
-        x = (u * 2 - 1) * width;
-      return [
-        x,
-        -0.04 - v * 0.145,
-        0.935 + 0.045 * Math.sin(Math.PI * v) + 0.015 * (1 - (u * 2 - 1) ** 2),
-      ];
-    },
-    16,
-    16,
-    "nose",
-    4300,
-  );
-  tube(
-    (t) => [0, -0.18 - t * 0.1, 0.935 - t * 0.018],
-    0.012,
-    "mouth",
-    12,
-    4200,
-  );
-  for (const side of [-1, 1]) {
-    tube(
-      (t) => [
-        side * (0.005 + t * 0.2),
-        -0.28 - 0.018 * Math.sin(t * Math.PI) + 0.045 * t * t,
-        0.916 - t * 0.032,
-      ],
-      0.01,
-      "mouth",
-      22,
-      4500,
-    );
-    for (const row of [-1, 0, 1])
-      tube(
-        (t) => [
-          side * (0.5 + 0.77 * t),
-          -0.20 + row * 0.075 + (row * 0.095 + 0.025) * t - 0.055 * t * t,
-          0.86 - 0.42 * t - 0.12 * t * t,
-        ],
-        0.0055,
-        "whisker",
-        30,
-        3500,
-      );
-  }
-  // Sample the visible sculpt on a regular code grid. Each glyph retains its
-  // world-space position, so the portrait still has real parallax and occlusion.
-  // Upright characters and deliberate whitespace reproduce the reference's rows.
-  const cells = new Map();
-  const dx = 0.027, dy = 0.036;
-  for (const triangle of triangles) {
-    if (triangle.part === "whisker") continue;
-    const [a,b,c] = triangle.vertices;
-    const den = (b.p[1]-c.p[1])*(a.p[0]-c.p[0])+(c.p[0]-b.p[0])*(a.p[1]-c.p[1]);
-    if (Math.abs(den) < 1e-10) continue;
-    const left = Math.ceil(Math.min(a.p[0],b.p[0],c.p[0])/dx);
-    const right = Math.floor(Math.max(a.p[0],b.p[0],c.p[0])/dx);
-    const bottom = Math.ceil(Math.min(a.p[1],b.p[1],c.p[1])/dy);
-    const top = Math.floor(Math.max(a.p[1],b.p[1],c.p[1])/dy);
-    for(let row=bottom;row<=top;row++) for(let col=left;col<=right;col++) {
-      const x=col*dx,y=row*dy;
-      const u=((b.p[1]-c.p[1])*(x-c.p[0])+(c.p[0]-b.p[0])*(y-c.p[1]))/den;
-      const v=((c.p[1]-a.p[1])*(x-c.p[0])+(a.p[0]-c.p[0])*(y-c.p[1]))/den;
-      const w=1-u-v;
-      if(u<0||v<0||w<0) continue;
-      const z=a.p[2]*u+b.p[2]*v+c.p[2]*w;
-      const key=col+','+row;
-      if(cells.has(key)&&cells.get(key).position[2]>=z) continue;
-      const n=normalize(a.n.map((value,k)=>value*u+b.n[k]*v+c.n[k]*w));
-      cells.set(key,{position:[x,y,z], normal:n, part:triangle.part, row,col});
+    surface((u,t)=>ear(u,t),18,22,"ear",1700);
+    surface((u,t)=>ear(u,t,true),18,22,"ear",1400,[side*.7,.7,.3]);
+    surface((u,t)=>{
+      const p=ear(.5+(u-.5)*.70,.12+t*.74);
+      return [p[0],p[1],p[2]+.012];
+    },14,22,"innerEar",2000);
+    for(const edge of [0,1]) {
+      surface((u,t)=>{
+        const a=ear(edge,t),b=ear(edge,t,true);
+        return a.map((n,k)=>n*(1-u)+b[k]*u);
+      },3,28,"ear",1400);
+      tube(t=>ear(edge,t),.022,"ear",34,2600);
     }
   }
-  const portrait = [];
+
+  for(const e of eyes) {
+    const side=Math.sign(e.x);
+    const eyePoint=(u,v)=>[
+      e.x+.285*u,
+      e.y+.15*(1-u*u)**.65*v+.035*u*side,
+      .50-.10*u*side+.16*(1-u*u)*Math.sqrt(Math.max(0,1-v*v))
+    ];
+    surface((u,v)=>eyePoint(u*2-1,v*2-1),32,28,"eye",2200);
+    // The iris is a convex cap on the eyeball; its large area makes the gaze
+    // readable at the landing page's real size. Pupils stay in front of it.
+    ellipsoid([e.x,e.y,.65],[.163,.134,.044],"iris",2800,p=>p,18,28);
+    ellipsoid([e.x,e.y,.70],[.060,.118,.018],"pupil",4800,p=>p,18,24);
+    ellipsoid([e.x-.040,e.y+.048,.722],[.025,.029,.008],"glint",6000,p=>p,12,18);
+    ellipsoid([e.x+.032,e.y-.052,.721],[.011,.015,.006],"glint",6000,p=>p,8,12);
+    for(const upper of [-1,1]) tube(t=>{
+      const p=eyePoint(t*2-1,upper); p[2]+=.018; return p;
+    },upper>0?.019:.012,"lid",36,4200);
+  }
+  surface((u,v)=>{
+    const x=(u*2-1)*.136*(1-v)**.75;
+    return [x,-.145-v*.14,.965+.035*Math.sin(Math.PI*v)+.018*(1-(u*2-1)**2)];
+  },20,22,"nose",4300);
+  tube(t=>[0,-.285-t*.10,.97-.027*t],.012,"mouth",18,4200);
+  for(const side of [-1,1]) {
+    tube(t=>[side*(.005+.215*t),-.385-.018*Math.sin(Math.PI*t)+.06*t*t,.943-.045*t],.011,"mouth",28,4500);
+    // Whisker follicles and long, smoothly curved whiskers emerge from pads.
+    for(const row of [0,1]) for(const col of [0,1,2])
+      ellipsoid([side*(.16+col*.068),-.265-row*.075,.918-col*.012],[.009,.009,.006],"mouth",5000,p=>p,6,8);
+    for(const row of [-1.5,-.5,.5,1.5]) tube(t=>[
+      side*(.31+1.03*t),-.31+row*.055+row*.095*t-.065*t*t,
+      .91-.48*t-.14*t*t
+    ],.004,"whisker",42,4000);
+  }
+  // Ray-sample the projected mesh, rather than orthographic XY coordinates:
+  // regular screen-space code rows now agree with the perspective depth pass.
+  const cells = new Map();
+  const dx=4.8,dy=6.5;
+  for(const triangle of triangles) {
+    if(["whisker","mouth","lid"].includes(triangle.part)) continue;
+    const v=triangle.vertices;
+    const [a,b,c]=v.map(q=>projectPoint(q.p));
+    const den=(b.y-c.y)*(a.x-c.x)+(c.x-b.x)*(a.y-c.y);
+    if(Math.abs(den)<1e-10) continue;
+    const left=Math.ceil(Math.min(a.x,b.x,c.x)/dx),right=Math.floor(Math.max(a.x,b.x,c.x)/dx);
+    const top=Math.ceil(Math.min(a.y,b.y,c.y)/dy),bottom=Math.floor(Math.max(a.y,b.y,c.y)/dy);
+    for(let row=top;row<=bottom;row++) for(let col=left;col<=right;col++) {
+      const x=col*dx,y=row*dy;
+      const u=((b.y-c.y)*(x-c.x)+(c.x-b.x)*(y-c.y))/den;
+      const w=((c.y-a.y)*(x-c.x)+(a.x-c.x)*(y-c.y))/den;
+      if(u<0||w<0||u+w>1) continue;
+      const weights=[u/(camera.distance-a.z),w/(camera.distance-b.z),(1-u-w)/(camera.distance-c.z)];
+      const total=weights.reduce((a,b)=>a+b,0);
+      const bary=weights.map(q=>q/total);
+      const p=[0,1,2].map(k=>v.reduce((sum,q,i)=>sum+q.p[k]*bary[i],0));
+      const key=col+','+row;
+      if(cells.has(key)&&cells.get(key).position[2]>=p[2]) continue;
+      const normal=normalize([0,1,2].map(k=>v.reduce((sum,q,i)=>sum+q.n[k]*bary[i],0)));
+      cells.set(key,{position:p,normal,part:triangle.part,row,col});
+    }
+  }
+  const portrait=[];
   for(const cell of cells.values()) {
-    const {position:p,part,row,col}=cell;
+    const {position:p,normal,part,row,col}=cell;
     const ax=Math.abs(p[0]);
-    const feature=["pupil","lid","nose","mouth","iris"].includes(part);
-    const stripe=part==="head" && (
-      (p[1]>.4 && p[1]<.85 && (ax<.045 || Math.abs(ax-(.16+(.8-p[1])*.42))<.05)) ||
-      (ax>.6 && [-.02,-.19,-.36].some(y=>Math.abs(p[1]-y+(ax-.65)*.22)<.025))
+    const illumination=Math.max(0,normal.reduce((sum,v,k)=>sum+v*lightDirection[k],0));
+    // M-shaped tabby marking, not a set of broad painted stripes.
+    const stripe=part==="head"&&(
+      (p[1]>.30&&p[1]<.64&&Math.abs(ax-(.08+(.64-p[1])*.55))<.025)||
+      (ax>.66&&[-.02,-.19].some(y=>Math.abs(p[1]-y+(ax-.66)*.35)<.026))
     );
     const hash=Math.abs(Math.imul(row+104,374761393)^Math.imul(col+101,668265263))>>>0;
-    const ramp=feature?'08@0':stripe?'09@8':part==='eye'?'.:·':p[1]<-.50?'.·:':part==='innerEar'?'.:;1':'.:;:01';
-    if(part==='glint') continue;
-    portrait.push({position:p,normal:[0,0,1],part,
-      char:ramp[hash%ramp.length], color:feature||stripe?'#003c27':part==='eye'?'#59806a':'#19553b',
-      size: feature?1.06:1.02});
+    const ramp=part==='pupil'?'@#8':part==='nose'?'08@':stripe?'08':part==='iris'?'0*+':part==='eye'?'.:':part==='glint'?'@':part==='innerEar'?':;01':illumination>.7?'.:;':illumination>.35?':;10':'08*';
+    const color=part==='pupil'?'#003521':part==='glint'?'#ffffff':part==='iris'?'#367554':part==='eye'?'#759786':part==='nose'||stripe?'#003b27':shade(normal,part==='chin'?'muzzle':materials[part]?part:'fur');
+    const tangentNormal=normalize([normal[0]*.3,normal[1]*.3,Math.max(.5,normal[2])]);
+    portrait.push({position:p,normal,tangentNormal,part,char:ramp[hash%ramp.length],color,
+      size:part==='pupil'?1.12:part==='glint'?1.2:part==='iris'?1.02:.88});
   }
-  // Fine whiskers and mouth contours need sub-grid sampling.
-  portrait.push(...glyphs.filter(g=>["whisker","mouth","lid"].includes(g.part)).map(g=>({...g,color:'#164b32',size:0.7})));
+  // Sub-grid curves keep eyelids, whiskers and the mouth smooth and connected.
+  portrait.push(...glyphs.filter(g=>["whisker","mouth","lid"].includes(g.part)).map(g=>({...g,color:'#164b32',size:g.part==='lid'?.85:.7})));
+  // The rear and grazing-angle surfaces retain code too, so turning the
+  // head reveals an actual covered volume rather than the edge of a portrait.
+  portrait.push(...glyphs.filter(g => g.normal[2] < .25 && g.position[2] < .5 && !["whisker","mouth","lid"].includes(g.part)));
   cached = {
     triangles,
     glyphs: portrait,
@@ -525,9 +453,10 @@ export function catGlyphs() {
       p.z < depth[y * width + x] - 0.008
     )
       return [];
-    const reference = Math.abs(g.normal[1]) > 0.99 ? [0, 0, -1] : [0, 1, 0];
-    const right = normalize(cross(reference, g.normal)),
-      up = cross(g.normal, right);
+    const tangent = g.tangentNormal || g.normal;
+    const reference = Math.abs(tangent[1]) > 0.99 ? [0, 0, -1] : [0, 1, 0];
+    const right = normalize(cross(reference, tangent)),
+      up = cross(tangent, right);
     const horizontal = projectPoint(
       lifted.map((v, k) => v + (right[k] * g.size) / 240),
       width,
