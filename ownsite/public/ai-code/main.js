@@ -1,9 +1,11 @@
+import { enhanceCases } from './cases.js';
 import { createScheduler } from './motion/glyph-renderer.js';
 import { createStudioMotion, enhanceDetails } from './motion/studio.js';
 import { createCatGaze } from './motion/cat-gaze.js';
 import { createCatVolume } from './motion/cat-volume.js';
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+enhanceCases(reduced);
 let scheduler, controller, gaze, volume;
 function staticMode() {
   controller?.finishAll();

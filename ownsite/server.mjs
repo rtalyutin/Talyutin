@@ -9,12 +9,13 @@ import { seedWorks } from './seed-works.mjs';
 import { openRemotePortfolio } from './remote-db.mjs';
 import { renderCatalogue, renderCase } from './public/registry.js';
 import { offlineWorks } from './public/offline-works.js';
+import { renderCases } from './ai-code-cases.mjs';
 
 const root = resolve(import.meta.dirname, 'public');
 const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.txt': 'text/plain', '.woff2': 'font/woff2' };
 const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/metrika.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const php2shellFiles = new Set(['/php2shell', '/php2shell/styles.css', '/php2shell/app.js']);
-const aiCodeFiles = new Set(['/ai-code/cat-static.svg', '/ai-code/rain.svg', '/ai-code/social-preview.png', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/events.js', '/ai-code/motion/studio.js', '/ai-code/fonts/onest-latin-cyrillic.woff2', '/ai-code/fonts/OFL.txt', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-volume.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
+const aiCodeFiles = new Set(['/ai-code/cat-static.svg', '/ai-code/rain.svg', '/ai-code/social-preview.png', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/cases.js', '/ai-code/events.js', '/ai-code/motion/studio.js', '/ai-code/fonts/onest-latin-cyrillic.woff2', '/ai-code/fonts/OFL.txt', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-volume.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
@@ -173,7 +174,7 @@ async function handle(req, res, database) {
     try {
       if (url.pathname === '/ai-code') {
         const counter = /^\d{1,12}$/.test(process.env.AI_CODE_METRIKA_ID || '') ? process.env.AI_CODE_METRIKA_ID : '';
-        const html = readFileSync(resolve(root, '.' + path), 'utf8').replace('{{AI_CODE_METRIKA_ID}}', counter);
+        const html = readFileSync(resolve(root, '.' + path), 'utf8').replace('{{AI_CODE_METRIKA_ID}}', counter).replace('{{AI_CODE_CASES}}', renderCases());
         return sendAiCode(req, res, 'text/html', html, {
           ...(counter ? { 'Content-Security-Policy': portfolioCsp } : {}),
           ...(process.env.ALLOW_INDEXING === '1' ? {} : { 'X-Robots-Tag': 'noindex, nofollow' })

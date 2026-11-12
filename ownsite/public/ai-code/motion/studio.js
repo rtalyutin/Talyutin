@@ -3,7 +3,7 @@ import { studioMotion as motion } from './config.js';
 // All transient rendering is disposable. HTML remains the source of content.
 export function createStudioMotion(sections, canvas, scheduler) {
   const context = canvas.getContext('2d');
-  const records = sections.map(element => ({ element, state: 'pending', animations: [], timer: 0 }));
+  const records = sections.filter(element => element.id !== 'cases').map(element => ({ element, state: 'pending', animations: [], timer: 0 }));
   let observer;
   const resizeCanvas = () => {
     if (!context) return;

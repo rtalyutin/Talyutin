@@ -42,6 +42,7 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
     "styles.css",
     "boot.js",
     "main.js",
+    "cases.js",
     "events.js",
     "motion/studio.js",
     "rain.svg",
@@ -92,6 +93,12 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
     (await fetch(base + "/ai-code", { method: "POST" })).status,
     405,
   );
+  assert.doesNotMatch(html, /МЕСТО ДЛЯ КЕЙСА|Здесь будет подтверждённый результат|{{AI_CODE_CASES}}/);
+  assert.equal((html.match(/class="case-card"/g) || []).length, 2);
+  assert.equal((html.match(/class="case-toggle"/g) || []).length, 2);
+  assert.equal((html.match(/data-case-cta=/g) || []).length, 2);
+  assert.match(html, /Доработали кодовую базу для дальнейшего сопровождения/);
+  assert.doesNotMatch(html, /href="https?:\/\/(?:яркиберсезон\.рф|talyutin\.online)/);
   assert.equal(calls, 0);
 });
 test("hero and subsequent assemblies transition at configured boundaries", () => {

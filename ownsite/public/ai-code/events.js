@@ -29,7 +29,7 @@ document.addEventListener('click', event => {
   if (!link) return;
   const block = link.closest('section')?.id || 'navigation';
   if ('telegram' in link.dataset) trackGoal('tg_click', { block });
-  if (link.dataset.cta) trackGoal('cta_click', { block, target: link.dataset.cta });
+  if (link.dataset.cta) trackGoal('cta_click', { block, target: link.dataset.cta, ...(link.dataset.caseCta ? { code: link.dataset.caseCta } : {}) });
 });
 document.querySelectorAll('details').forEach(details => details.addEventListener('toggle', () => {
   const source = directOpening.has(details) ? 'direct_anchor' : 'user';

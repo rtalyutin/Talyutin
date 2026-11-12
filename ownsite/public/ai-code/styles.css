@@ -355,3 +355,35 @@ h1 { font-size: clamp(52px,6.9vw,98px); line-height: .99; margin: 18px 0 30px; f
  section:not(.hero):not(#cases) { padding-block: 42px; }
 }
 @media(max-width:359px) { :root { --gutter: 18px; } .brand span { font-size: 23px; } .nav { font-size: 12px; } }
+
+/* Product stories share the landing's font, palette and thin outlines. */
+#cases .cases-grid { gap: 24px; align-items: start; overflow-anchor: none; }
+#cases .case-card { min-width: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: 2px; box-shadow: none; transition: none; }
+.case-preview { display: grid; grid-template-rows: var(--case-row-0,auto) var(--case-row-1,auto) var(--case-row-2,auto) var(--case-row-3,auto) auto; gap: 24px; padding: 32px; }
+.case-project { font-size: 12px; font-weight: 650; line-height: 1.5; letter-spacing: .04em; overflow-wrap: anywhere; }
+#cases .case-card h3 { font-size: clamp(30px,2.5vw,36px); line-height: 1.15; margin: 0; text-wrap: initial; }
+.case-description,.case-result,.case-story { font-size: 17px; line-height: 1.55; color: var(--muted); }
+.case-preview > p { margin: 0; }
+.case-label { font-size: 13px; font-weight: 650; color: var(--ink); }
+.case-result p + p { margin-top: 8px; }
+.case-toggle { display: inline-flex; justify-self: start; align-items: center; min-width: 44px; min-height: 44px; padding: 8px 0; border: 0; border-bottom: 1px solid var(--ink); color: var(--ink); background: transparent; font: 650 18px/1.5 Onest,Arial,sans-serif; cursor: pointer; }
+.case-toggle:hover { color: var(--muted); }
+.case-toggle:focus-visible { outline: 2px solid var(--green); outline-offset: 5px; }
+.case-toggle[hidden],.case-story[hidden] { display: none; }
+.case-story { padding: 0 32px 32px; }
+.case-chapter { padding-top: 24px; border-top: 1px solid var(--line); margin-bottom: 24px; }
+.case-chapter h4 { margin: 0 0 12px; font-size: 18px; font-weight: 700; color: var(--ink); }
+.case-contact { padding-top: 24px; border-top: 1px solid var(--line); color: var(--ink); }
+.case-contact .button { margin-top: 16px; min-width: 0; min-height: 48px; padding: 12px 20px; font-size: 18px; max-width: 100%; }
+@media(max-width:899px) {
+  #cases .cases-grid { grid-template-columns: 1fr; gap: 16px; }
+  .case-preview { padding: 24px; gap: 20px; grid-template-rows: auto; }
+  #cases .case-card h3 { font-size: 28px; }
+  .case-story { padding: 0 24px 24px; }
+}
+@media(max-width:700px) {
+  .case-preview { padding: 20px; }
+  #cases .case-card h3 { font-size: 26px; }
+  .case-description,.case-result,.case-story { font-size: 16px; }
+  .case-story { padding: 0 20px 20px; }
+}
