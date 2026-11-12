@@ -98,7 +98,9 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
   assert.equal((html.match(/class="case-toggle"/g) || []).length, 2);
   assert.equal((html.match(/data-case-cta=/g) || []).length, 2);
   assert.match(html, /Доработали кодовую базу для дальнейшего сопровождения/);
-  assert.doesNotMatch(html, /href="https?:\/\/(?:яркиберсезон\.рф|talyutin\.online)/);
+  for (const domain of ['яркиберсезон.рф', 'talyutin.online']) {
+    assert.ok(html.includes(`href="https://${domain}/" target="_blank" rel="noopener noreferrer" aria-label="${domain} — открыть в новой вкладке"`));
+  }
   assert.equal(calls, 0);
 });
 test("hero and subsequent assemblies transition at configured boundaries", () => {

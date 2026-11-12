@@ -2,6 +2,7 @@
 export const cases = [
   {
     id: 'case-1', code: 'yarkiberseason', project: 'ЯРКИБЕРСЕЗОН · КИБЕРСПОРТИВНАЯ ПЛАТФОРМА',
+    site: { label: 'яркиберсезон.рф', url: 'https://яркиберсезон.рф/' },
     title: 'Обновления ломали работающий продукт',
     description: 'После обновлений переставало работать согласование времени матчей в Telegram. Капитанам приходилось договариваться в личных сообщениях.',
     result: 'Провели рефакторинг сервиса и настроили навыки ИИ-агентов. Основатель продолжил развивать продукт вайбкодингом.',
@@ -14,6 +15,7 @@ export const cases = [
   },
   {
     id: 'case-2', code: 'talyutin-online', project: 'TALYUTIN.ONLINE · ЗАПИСЬ ЧЕРЕЗ VK-БОТА',
+    site: { label: 'talyutin.online', url: 'https://talyutin.online/' },
     title: 'Разработчики не могли взять код на поддержку',
     description: 'Код сервиса был собран в одном файле с самописным адаптером к базе данных. Такое устройство мешало передать продукт на сопровождение.',
     result: 'После доработки сервис передали обратно основателю. Он продолжил его использовать.',
@@ -31,7 +33,7 @@ const escape = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;
 export function renderCaseCard(item) {
   return `<article id="${escape(item.id)}" class="case-card" data-case="${escape(item.code)}" aria-labelledby="${escape(item.id)}-title">
 <div class="case-preview">
-<p class="case-project">${escape(item.project)}</p>
+<div class="case-project"><p>${escape(item.project)}</p><a class="case-site" href="${escape(item.site.url)}" target="_blank" rel="noopener noreferrer" aria-label="${escape(item.site.label)} — открыть в новой вкладке">${escape(item.site.label)} <span aria-hidden="true">↗</span></a></div>
 <h3 id="${escape(item.id)}-title">${escape(item.title)}</h3>
 <p class="case-description">${escape(item.description)}</p>
 <div class="case-result"><p class="case-label">Результат</p><p>${escape(item.result)}</p></div>

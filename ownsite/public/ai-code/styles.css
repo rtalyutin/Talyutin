@@ -361,6 +361,9 @@ h1 { font-size: clamp(52px,6.9vw,98px); line-height: .99; margin: 18px 0 30px; f
 #cases .case-card { min-width: 0; background: var(--paper); border: 1px solid var(--ink); border-radius: 2px; box-shadow: none; transition: none; }
 .case-preview { display: grid; grid-template-rows: var(--case-row-0,auto) var(--case-row-1,auto) var(--case-row-2,auto) var(--case-row-3,auto) auto; gap: 24px; padding: 32px; }
 .case-project { font-size: 12px; font-weight: 650; line-height: 1.5; letter-spacing: .04em; overflow-wrap: anywhere; }
+.case-site { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 4px; font-size: 14px; font-weight: 400; letter-spacing: 0; color: var(--muted); text-decoration: underline; }
+.case-site:hover { color: var(--ink); text-decoration-thickness: 2px; }
+.case-site span { font-size: 18px; }
 #cases .case-card h3 { font-size: clamp(30px,2.5vw,36px); line-height: 1.15; margin: 0; text-wrap: initial; }
 .case-description,.case-result,.case-story { font-size: 17px; line-height: 1.55; color: var(--muted); }
 .case-preview > p { margin: 0; }
