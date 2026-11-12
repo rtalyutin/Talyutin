@@ -1,0 +1,28 @@
+:root { color-scheme: light; --paper: #f5fff3; --white: #f5fff3; --ink: #003c27; --green: #257b45; --accent: #b3ff62; --muted: #315b40; --line: #bdd9b8; --wash: #edfae7; }
+body { background: var(--paper); }
+#cases .case-card { background: var(--paper); border-color: #a3c49e; }
+#request,.site-footer { background: #e5f4df; color: var(--ink); }
+#request { border-top: 1px solid var(--line); }
+#request .eyebrow,#request .hint,.site-footer .footer-heading,.site-footer .footer-legal dt,.site-footer .footer-legal,.footer-identity > p,.footer-contact > p:last-child,.footer-address,.footer-bottom { color: var(--muted); }
+.site-footer .footer-brand { color: var(--ink); }
+.site-footer .footer-legal,.footer-bottom { border-color: #aac7a2; }
+#request a:focus-visible,.site-footer a:focus-visible { outline-color: var(--green); }
+.mobile-menu nav { background: var(--paper); }
+#code-layer { z-index: 8; }
+.matrix-boot main,.matrix-boot .site-footer,.matrix-pending { opacity: 0; }
+.matrix-piece { opacity: 0 !important; }
+.matrix-surface::before,.matrix-surface::after { opacity: 0 !important; }
+.matrix-surface { border-color: transparent !important; }
+.matrix-assembling { overflow-anchor: none; }
+.matrix-controls { position: fixed; z-index: 12; right: 20px; bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 6px; border: 1px solid #a3c49e; border-radius: 8px; background: #f5fff3f5; box-shadow: 0 4px 28px #1b54231a; color: var(--ink); font: 12px/1.4 Onest,Arial,sans-serif; }
+.matrix-controls a,.matrix-controls button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 4px; font: inherit; color: inherit; background: transparent; cursor: pointer; text-decoration: none; }
+.matrix-controls button { background: #dcf4ce; }
+.matrix-controls button[hidden] { display: none; }
+.matrix-controls :focus-visible { outline: 2px solid var(--green); outline-offset: 2px; }
+.matrix-controls a:hover,.matrix-controls button:hover { background: #c5ebb3; }
+.site-footer { padding-bottom: 100px; }
+@media(max-width:500px) { .matrix-controls { right: 12px; bottom: 12px; left: 12px; justify-content: space-between; } }
+@media(prefers-reduced-motion:reduce), (forced-colors:active) {
+ .matrix-boot main,.matrix-boot .site-footer,.matrix-pending,.matrix-piece { opacity: 1 !important; }
+ .matrix-controls button { display: none; }
+}

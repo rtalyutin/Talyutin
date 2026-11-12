@@ -12,7 +12,7 @@ if (Number.isSafeInteger(counter) && counter > 0) {
   script.src = 'https://mc.yandex.ru/metrika/tag.js';
   script.async = true;
   window.ym(counter, 'init', { defer: true, webvisor: false, clickmap: false, trackLinks: false, trackHash: false });
-  window.ym(counter, 'hit', location.origin + '/ai-code');
+  window.ym(counter, 'hit', location.origin + (location.pathname === '/ai-code-matrix' ? '/ai-code-matrix' : '/ai-code'));
   document.head.append(script);
 }
 const directOpening = new WeakSet();

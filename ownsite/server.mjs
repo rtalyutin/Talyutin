@@ -16,6 +16,7 @@ const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript
 const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/metrika.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const php2shellFiles = new Set(['/php2shell', '/php2shell/styles.css', '/php2shell/app.js']);
 const aiCodeFiles = new Set(['/ai-code/cat-static.svg', '/ai-code/rain.svg', '/ai-code/social-preview.png', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/cases.js', '/ai-code/events.js', '/ai-code/motion/studio.js', '/ai-code/fonts/onest-latin-cyrillic.woff2', '/ai-code/fonts/OFL.txt', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-volume.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
+const matrixFiles = new Set(['/ai-code-matrix', '/ai-code-matrix/boot.js', '/ai-code-matrix/main.js', '/ai-code-matrix/particles.js', '/ai-code-matrix/styles.css']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
@@ -169,12 +170,21 @@ async function handle(req, res, database) {
     return send(res, 200, 'text/plain', 'OK');
   }
   if (url.pathname === '/ai-code/' || url.pathname === '/ai-code/index.html') return send(res, 308, 'text/plain', 'Moved', { Location: '/ai-code' });
-  if (aiCodeFiles.has(url.pathname)) {
-    const path = url.pathname === '/ai-code' ? '/ai-code/index.html' : url.pathname;
+  if (url.pathname === '/ai-code-matrix/' || url.pathname === '/ai-code-matrix/index.html') return send(res, 308, 'text/plain', 'Moved', { Location: '/ai-code-matrix' });
+  if (aiCodeFiles.has(url.pathname) || matrixFiles.has(url.pathname)) {
+    const isMatrix = url.pathname === '/ai-code-matrix';
+    const path = url.pathname === '/ai-code' || isMatrix ? '/ai-code/index.html' : url.pathname;
     try {
-      if (url.pathname === '/ai-code') {
+      if (url.pathname === '/ai-code' || isMatrix) {
         const counter = /^\d{1,12}$/.test(process.env.AI_CODE_METRIKA_ID || '') ? process.env.AI_CODE_METRIKA_ID : '';
-        const html = readFileSync(resolve(root, '.' + path), 'utf8').replace('{{AI_CODE_METRIKA_ID}}', counter).replace('{{AI_CODE_CASES}}', renderCases());
+        let html = readFileSync(resolve(root, '.' + path), 'utf8').replace('{{AI_CODE_METRIKA_ID}}', counter).replace('{{AI_CODE_CASES}}', renderCases());
+        if (isMatrix) html = html
+          .replaceAll('https://talyutin.ru/ai-code"', 'https://talyutin.ru/ai-code-matrix"')
+          .replace('<title>ИИКОТ', '<title>ИИКОТ · Matrix')
+          .replace('src="/ai-code/boot.js"', 'src="/ai-code-matrix/boot.js"')
+          .replace('src="/ai-code/main.js"', 'src="/ai-code-matrix/main.js"')
+          .replace('</head>', '<link rel="stylesheet" href="/ai-code-matrix/styles.css">\n</head>')
+          .replace('</body>', '<div class="matrix-controls" aria-label="Режим просмотра"><a href="/ai-code">Обычная версия ↗</a><button type="button" id="matrix-control" hidden>Пропустить сборку</button></div>\n</body>');
         return sendAiCode(req, res, 'text/html', html, {
           ...(counter ? { 'Content-Security-Policy': portfolioCsp } : {}),
           ...(process.env.ALLOW_INDEXING === '1' ? {} : { 'X-Robots-Tag': 'noindex, nofollow' })
