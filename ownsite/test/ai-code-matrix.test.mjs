@@ -19,16 +19,16 @@ test('Matrix variant shares content but isolates its route, boot and motion asse
  assert.match(html, /Еремин Илья Алексеевич/);
  assert.equal((html.match(/class="case-card"/g)||[]).length,2);
  assert.match(html, /content="https:\/\/talyutin.ru\/ai-code\/social-preview.png"/);
- for(const asset of ['boot.js','theme.js','main.js','founders.js','particles.js','styles.css']) assert.equal((await fetch(origin+'/ai-code-matrix/'+asset)).status,200);
+ for(const asset of ['boot.js','theme.js','main.js','particles.js','styles.css']) assert.equal((await fetch(origin+'/ai-code-matrix/'+asset)).status,200);
  for(const path of ['/ai-code-matrix/','/ai-code-matrix/index.html']) {
   const redirect=await fetch(origin+path,{redirect:'manual'});assert.equal(redirect.status,308);assert.equal(redirect.headers.get('location'),'/ai-code-matrix');
  }
  for (const person of ['ilya','roman']) {
-  const photo=await fetch(origin+'/ai-code-matrix/'+person+'.jpg');
+  const photo=await fetch(origin+'/ai-code/'+person+'.jpg');
   assert.equal(photo.status,200);
   assert.match(photo.headers.get('content-type'),/^image\/jpeg/);
   assert.ok((await photo.arrayBuffer()).byteLength>10000);
-  assert.ok(html.includes('/ai-code-matrix/'+person+'.jpg'));
+  assert.ok(html.includes('/ai-code/'+person+'.jpg'));
  }
  assert.doesNotMatch(html,/Место для фотографии/);
  assert.equal((await fetch(origin+'/ai-code-matrix/missing.js')).status,404);
@@ -46,7 +46,9 @@ test('Matrix variant shares content but isolates its route, boot and motion asse
  assert.match(team,/Разбирается в задаче и согласует ожидаемый результат\./);
  assert.match(team,/стартапы, финтех, крупные компании, легалтех, смарт-контракты/);
  assert.match(team,/стартапы, фарма, финтех, спорттех, металлургия, логистика, маркетплейсы, CRM, криптофинтех, мобильные приложения и мессенджеры/);
- assert.match(normal,/Опыт основателей/);
+ assert.doesNotMatch(normal,/Опыт основателей|ai-code-matrix/);
+ assert.equal(normal.match(/<section id="team"[\s\S]*?<\/section>/)[0],team);
+ assert.equal((await fetch(origin+'/ai-code/founders.js')).status,200);
  const sections=markup=>[...markup.matchAll(/<section id="(?!team")[^" ]+"[\s\S]*?<\/section>/g)].map(match=>match[0]);
  assert.deepEqual(sections(html),sections(normal));
 

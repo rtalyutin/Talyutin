@@ -1,3 +1,4 @@
+import { enhanceFounders } from './founders.js';
 import { enhanceCases } from './cases.js';
 import { createScheduler } from './motion/glyph-renderer.js';
 import { createStudioMotion, enhanceDetails } from './motion/studio.js';
@@ -5,6 +6,7 @@ import { createCatGaze } from './motion/cat-gaze.js';
 import { createCatVolume } from './motion/cat-volume.js';
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+enhanceFounders();
 enhanceCases(reduced);
 let scheduler, controller, gaze, volume;
 function staticMode() {
@@ -19,7 +21,7 @@ try {
   enhanceDetails(reduced);
   if (!reduced.matches && window.IntersectionObserver && Element.prototype.animate) {
     scheduler = createScheduler(staticMode);
-    controller = createStudioMotion([...document.querySelectorAll('main > section')], document.querySelector('#code-layer'), scheduler);
+    controller = createStudioMotion([...document.querySelectorAll('main > section:not(#team)')], document.querySelector('#code-layer'), scheduler);
     const cat = document.querySelector('#cat');
     // Start with a separate SVG image. Allocate WebGL only on a desktop interaction.
     const activateCat = event => {

@@ -1,4 +1,4 @@
-import { enhanceFounders } from './founders.js';
+import { enhanceFounders } from '/ai-code/founders.js';
 import { enhanceCases } from '/ai-code/cases.js';
 import { enhanceDetails } from '/ai-code/motion/studio.js';
 import { createCatVolume } from '/ai-code/motion/cat-volume.js';
