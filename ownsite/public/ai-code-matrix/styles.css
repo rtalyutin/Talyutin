@@ -1,7 +1,7 @@
-:root { color-scheme: light; --paper: #f5fff3; --white: #f5fff3; --ink: #003c27; --green: #257b45; --accent: #b3ff62; --muted: #315b40; --line: #bdd9b8; --wash: #edfae7; }
+:root { color-scheme: light; --paper: #ffffff; --white: #ffffff; --ink: #003c27; --green: #257b45; --accent: #b3ff62; --muted: #315b40; --line: #bdd9b8; --wash: #edfae7; }
 body { background: var(--paper); }
 #cases .case-card { background: var(--paper); border-color: #a3c49e; }
-#request,.site-footer { background: #e5f4df; color: var(--ink); }
+#request,.site-footer { background: #ffffff; color: var(--ink); }
 #request { border-top: 1px solid var(--line); }
 #request .eyebrow,#request .hint,.site-footer .footer-heading,.site-footer .footer-legal dt,.site-footer .footer-legal,.footer-identity > p,.footer-contact > p:last-child,.footer-address,.footer-bottom { color: var(--muted); }
 .site-footer .footer-brand { color: var(--ink); }
@@ -14,7 +14,7 @@ body { background: var(--paper); }
 .matrix-surface::before,.matrix-surface::after { opacity: 0 !important; }
 .matrix-surface { border-color: transparent !important; }
 .matrix-assembling { overflow-anchor: none; }
-.matrix-controls { position: fixed; z-index: 12; right: 20px; bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 6px; border: 1px solid #a3c49e; border-radius: 8px; background: #f5fff3f5; box-shadow: 0 4px 28px #1b54231a; color: var(--ink); font: 12px/1.4 Onest,Arial,sans-serif; }
+.matrix-controls { position: fixed; z-index: 12; right: 20px; bottom: 16px; display: flex; align-items: center; gap: 8px; padding: 6px; border: 1px solid #a3c49e; border-radius: 8px; background: #fffffff5; box-shadow: 0 4px 28px #1b54231a; color: var(--ink); font: 12px/1.4 Onest,Arial,sans-serif; }
 .matrix-controls a,.matrix-controls button { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 12px; border: 0; border-radius: 4px; font: inherit; color: inherit; background: transparent; cursor: pointer; text-decoration: none; }
 .matrix-controls button { background: #dcf4ce; }
 .matrix-controls button[hidden] { display: none; }

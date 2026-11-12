@@ -7,7 +7,7 @@ import {
 
 // Transparent depth mesh + code glyphs tangent to the sculpted surface.
 // The mesh writes depth only: no solid polygon or rectangular texture is visible.
-export function createCatVolume(container, { assembly = 1 } = {}) {
+export function createCatVolume(container) {
   const canvas = document.createElement("canvas");
   canvas.className = "cat-volume";
   canvas.setAttribute("aria-hidden", "true");
@@ -18,7 +18,6 @@ export function createCatVolume(container, { assembly = 1 } = {}) {
   });
   if (!gl) return null;
   const resources = [];
-  let currentAssembly = assembly;
   let stopped = false,
     current = { x: 0, y: 0 };
   function shader(type, source) {
@@ -57,16 +56,11 @@ export function createCatVolume(container, { assembly = 1 } = {}) {
   );
   const glyphProgram = program(
     `attribute vec3 aPosition;attribute vec3 aColor;attribute vec3 aNormal;attribute vec3 aTangentNormal;attribute float aSize;attribute vec2 aCorner;attribute float aLetter;attribute float aPupil;${transform}
- uniform float uAssembly;
  varying vec2 vUv;varying vec3 vColor;
  void main(){
  vec3 reference=abs(aTangentNormal.y)>.99?vec3(0.,0.,-1.):vec3(0.,1.,0.);
  vec3 right=normalize(cross(reference,aTangentNormal));vec3 up=cross(aTangentNormal,right);
  vec3 anchor=aPosition+(aCorner.x*right*6.67+aCorner.y*up*10.)/240.*aSize;
- float seed=fract(sin(dot(aPosition,vec3(12.9898,78.233,37.719)))*43758.5453);
- float phase=clamp((uAssembly-seed*.28)/.72,0.,1.);
- float travel=1.-phase;travel=travel*travel*travel;
- anchor+=vec3(sin(seed*30.)*1.8,3.+seed*5.,sin(seed*12.)*2.)*travel;
  vec4 p=project(anchor,aPupil);
  vec3 light=vec3(${lightDirection.map((v) => v.toFixed(5)).join(",")});
  float cy=cos(uTurn.x),sy=sin(uTurn.x),cx=cos(uTurn.y),sx=sin(uTurn.y);
@@ -203,14 +197,13 @@ export function createCatVolume(container, { assembly = 1 } = {}) {
     attribute(depthProgram, "aPupil", 1, 4, 3);
     gl.colorMask(false, false, false, false);
     gl.depthMask(true);
-    if (currentAssembly >= .995) gl.drawArrays(gl.TRIANGLES, 0, depthVertexCount);
+    gl.drawArrays(gl.TRIANGLES, 0, depthVertexCount);
     gl.colorMask(true, true, true, true);
     gl.depthMask(false);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.useProgram(glyphProgram);
     uniforms(glyphProgram);
-    gl.uniform1f(gl.getUniformLocation(glyphProgram, "uAssembly"), currentAssembly);
     gl.uniform1i(gl.getUniformLocation(glyphProgram, "uAtlas"), 0);
     gl.bindBuffer(gl.ARRAY_BUFFER, glyphBuffer);
     attribute(glyphProgram, "aPosition", 3, glyphStride, 0);
@@ -240,7 +233,6 @@ export function createCatVolume(container, { assembly = 1 } = {}) {
     resize.observe(container);
     return {
       render,
-      assemble(progress) { currentAssembly = Math.max(0, Math.min(1, progress)); render(); },
       neutral() {
         current = { x: 0, y: 0 };
         render();

@@ -13,15 +13,15 @@ const control=document.querySelector('#matrix-control');
 const roots=[...document.querySelectorAll('main > section,.site-footer')];
 const records=roots.map(element=>({element,state:'pending',points:[],atoms:[],surfaces:[],animations:[]}));
 const cat=document.querySelector('#cat');
-let renderer,scheduler,observer,volume,gaze,disabled=false,firstFrame=0;
+let renderer,scheduler,observer,volume,gaze,disabled=false;
 function reveal(record) {
   for(const animation of record.animations)animation.cancel();
   record.animations=[];
   record.element.classList.remove('matrix-pending','matrix-assembling');
   for(const atom of record.atoms)atom.classList.remove('matrix-piece');
   for(const surface of record.surfaces)surface.classList.remove('matrix-surface');
-  record.points=[];record.state='ready';record.element.dataset.matrixState='ready';
-  if(record.element.id==='intro') {volume?.assemble(1);gaze?.wake();}
+  record.points=[];record.drops=[];record.state='ready';record.element.dataset.matrixState='ready';
+  if(record.element.id==='intro') {gaze?.wake();}
 }
 function updateControl(){control.textContent=records.some(r=>r.state!=='ready')?'Пропустить сборку':'Повторить сборку';}
 function finishAll() {
@@ -35,7 +35,7 @@ function stop(){disabled=true;finishAll();gaze?.stop();scheduler?.clear();contro
 function frame(time) {
   try {
     renderer.clear();
-    let active=false, rainAlpha=0;
+    let active=false;
     for(const record of records) {
       if(record.state!=='active')continue;
       const box=record.element.getBoundingClientRect();
@@ -43,19 +43,17 @@ function frame(time) {
       const elapsed=time-record.start;
       const progress=clamp((elapsed-record.lead)/record.duration);
       if(progress>=1){reveal(record);continue;}
-      active=true;rainAlpha=Math.max(rainAlpha,(1-clamp((progress-.35)/.6))*.8);
+      active=true;
     }
-    if(active)renderer.rain(time-firstFrame,rainAlpha);
+    if(active)renderer.draw(time,records.filter(record=>record.state==='active'));
     for(const record of records) {
       if(record.state!=='active')continue;
       const progress=clamp((time-record.start-record.lead)/record.duration);
-      if(progress>0)renderer.assemble(record,progress);
-      if(record.element.id==='intro')volume?.assemble(progress);
-      if(progress>.84 && !record.handoff) {
+      if(progress>.92 && !record.handoff) {
         record.handoff=true;
         for(const atom of record.atoms) {
           atom.classList.remove('matrix-piece');
-          if(atom.animate)record.animations.push(atom.animate([{opacity:0},{opacity:1}],{duration:record.duration*.16,fill:'both'}));
+          if(atom.animate)record.animations.push(atom.animate([{opacity:0},{opacity:1}],{duration:record.duration*.08,fill:'both'}));
         }
         for(const surface of record.surfaces)surface.classList.remove('matrix-surface');
       }
@@ -66,20 +64,19 @@ function frame(time) {
 function start(record) {
   if(disabled||record.state!=='pending')return;
   try {
-    const sampled=sampleInterface(record.element,!!volume);
+    const sampled=sampleInterface(record.element);
     Object.assign(record,sampled,{state:'active',start:performance.now(),lead:record.initial?650:150,duration:record.initial?3400:1650,handoff:false});
+    renderer.attach(record);
     record.element.dataset.matrixTargets=String(record.points.length);
     record.element.dataset.matrixState='assembling';
     record.element.classList.add('matrix-assembling');
     record.atoms.forEach(atom=>atom.classList.add('matrix-piece'));
     record.surfaces.forEach(surface=>surface.classList.add('matrix-surface'));
     record.element.classList.remove('matrix-pending');
-    if(record.element.id==='intro')volume?.assemble(0);
     scheduler.add(frame);
   }catch{stop();}
 }
 function prepare() {
-  firstFrame=performance.now();
   for(const record of records) {record.state='pending';record.initial=false;record.element.classList.add('matrix-pending');record.element.dataset.matrixState='pending';observer.observe(record.element);}
   const visible=records.filter(r=>{const b=r.element.getBoundingClientRect();return b.bottom>0&&b.top<innerHeight;});
   visible.forEach(record=>{record.initial=true;start(record);});
@@ -91,11 +88,11 @@ async function boot() {
     scheduler=createScheduler(stop);
     // Start perspective rain while fonts resolve; native content is released by
     // the independent watchdog if initialization cannot complete.
-    const waiting=time=>{renderer.clear();renderer.rain(time,.7);return true;};scheduler.add(waiting);
+    const waiting=time=>{renderer.clear();renderer.draw(time,[]);return true;};scheduler.add(waiting);
     await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,1100))]);
     scheduler.remove(waiting);
     if(disabled||window.matrixBootExpired){stop();return;}
-    try{volume=createCatVolume(cat,{assembly:0});}catch{volume=null;}
+    try{volume=createCatVolume(cat);}catch{volume=null;}
     if(volume)gaze=createCatGaze(cat,scheduler,()=>records[0].state==='ready',volume);
     observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting)start(records.find(r=>r.element===entry.target));},{threshold:0});
     prepare();

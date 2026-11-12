@@ -1,5 +1,7 @@
+import { catGlyphs } from '../ai-code/motion/cat-model.js';
 // Perspective code streams and a sampled silhouette of the real, laid-out UI.
 // No screenshot service, duplicated copy, external library or remote font.
+let catSurface;
 const letters = '01アイウエオカキクケコサシスセソタチツテト<>/{}+=*';
 export const clamp = value => Math.max(0, Math.min(1, value));
 const hash = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -8,7 +10,7 @@ const visible = el => {
   const style = getComputedStyle(el);
   return r.width > 0 && r.height > 0 && style.display !== 'none' && style.visibility !== 'hidden' && !el.closest('[hidden],script,canvas');
 };
-export function sampleInterface(root, hasVolume) {
+export function sampleInterface(root) {
   const box = root.getBoundingClientRect();
   const mask = document.createElement('canvas');
   mask.width = Math.ceil(box.width); mask.height = Math.ceil(box.height);
@@ -76,11 +78,19 @@ export function sampleInterface(root, hasVolume) {
       ink.fillText(node.data[i],r.left-box.left,r.top-box.top+(r.height-size)/2+size*.8);
     }
   }
-  // WebGL-less devices still assemble the supplied SVG from sampled symbols.
-  const cat = root.querySelector('#cat > img');
-  if (!hasVolume && cat?.complete && cat.naturalWidth) {
-    const r=cat.getBoundingClientRect(); ink.drawImage(cat,r.left-box.left,r.top-box.top,r.width,r.height);
+  // Project the same depth-tested cat surface into the shared rain target set.
+  // Its native WebGL canvas stays hidden until these rain drops have landed.
+  const cat = root.querySelector('#cat');
+  const catPoints=[];
+  if(cat) {
     atoms.push(cat);
+    const r=cat.getBoundingClientRect(), scale=r.height/590;
+    for(const g of (catSurface ||= catGlyphs())) catPoints.push({
+      x:r.left-box.left+r.width/2+(g.x-320)*scale,
+      y:r.top-box.top+g.y*scale,
+      color:g.color,seed:hash(g.x+g.y*13),letter:g.char,
+      size:Math.max(1.5,7.5*Math.hypot(g.matrix[0],g.matrix[1])*scale),
+    });
   }
   const data=ink.getImageData(0,0,mask.width,mask.height).data;
   const points=[];
@@ -98,54 +108,103 @@ export function sampleInterface(root, hasVolume) {
   }
   // Bound work on long disclosures while distributing samples across all content.
   const stride=Math.max(1,Math.ceil(points.length/14000));
-  return {points:points.filter((_,i)=>i%stride===0),atoms,surfaces};
+  return {points:[...points.filter((_,i)=>i%stride===0),...catPoints],atoms,surfaces};
+}
+// A drop is emitted above the viewport, falls in its column, then is captured.
+// There is no second particle system moving toward silhouettes from the side.
+export function dropPosition(drop, elapsed) {
+  const age=elapsed-drop.born;
+  if(age<0)return null;
+  const y=Math.min(drop.target.y,drop.from+age*drop.speed);
+  const captured=y>=drop.target.y;
+  const dock=clamp(1-(drop.target.y-y)/18);
+  return {x:drop.x+(drop.target.x-drop.x)*dock,y,captured};
 }
 export function createRain(canvas) {
   const ctx=canvas.getContext('2d');
   if(!ctx) throw new Error('Canvas unavailable');
-  function resize(){const dpr=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.ceil(innerWidth*dpr);canvas.height=Math.ceil(innerHeight*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);}
-  resize();
-  function clear(){ctx.clearRect(0,0,innerWidth,innerHeight);}
-  function rain(time,alpha) {
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    // Three perspective planes: farther columns are smaller, slower and paler.
+  let ambient=[],lastTime;
+  function resize(){
+    const dpr=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.ceil(innerWidth*dpr);canvas.height=Math.ceil(innerHeight*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+    ambient=[];
     for(let layer=0;layer<3;layer++) {
-      const depth=layer*500+80, scale=800/(800+depth), spacing=25*scale;
-      const count=Math.ceil(innerWidth/spacing);
-      ctx.font=`${Math.round(17*scale)}px monospace`;
-      for(let col=0;col<count;col++) {
-        const seed=hash(col+layer*127), length=12+Math.floor(seed*10);
-        const x=(col+.5)*spacing+Math.sin(time*.00013+seed*6)*5*scale;
-        const head=((time*(.18+seed*.12)*scale+seed*(innerHeight+500))%(innerHeight+500))-100;
-        for(let j=length-1;j>=0;j--) {
-          const y=head-j*20*scale;if(y<0||y>innerHeight)continue;
-          ctx.globalAlpha=alpha*(1-j/length)*(.55-layer*.12);
-          ctx.fillStyle=j===0?'#398f4b':layer===0?'#66bd59':'#8acb77';
-          ctx.fillText(letters[(col*7+j+Math.floor(time/105))%letters.length],x,y);
-        }
+      const scale=800/(800+layer*500+80),spacing=26*scale;
+      for(let col=0;col<innerWidth/spacing;col++) {
+        const seed=hash(col+layer*127);
+        for(let row=0;row<14;row++)ambient.push({
+          x:(col+.5)*spacing,y:seed*(innerHeight+320)-row*20*scale,
+          speed:(.17+seed*.13)*scale,size:Math.round(15*scale),
+          alpha:(1-row/14)*(.48-layer*.1),letter:letters[(col*7+row)%letters.length],
+          color:row===0?'#62b963':layer===0?'#84cf76':'#aadf9e',
+        });
       }
     }
-    ctx.globalAlpha=1;
+    lastTime=undefined;
   }
-  function assemble(record,progress) {
-    const box=record.element.getBoundingClientRect();
-    const fade=1-clamp((progress-.9)/.1);
-    ctx.font='7px monospace';ctx.textAlign='center';ctx.textBaseline='middle';
-    for(const p of record.points) {
-      const delay=.25*(p.y/Math.max(1,box.height))+.15*p.seed;
-      const local=clamp((progress-delay)/(.82-delay));
-      const travel=(1-local)**3;
-      const z=(180+p.seed*1200)*travel;
-      const scale=850/(850+z);
-      const targetX=box.left+p.x, targetY=box.top+p.y;
-      const x=innerWidth/2+(targetX-innerWidth/2+(p.seed-.5)*220*travel)*scale;
-      const y=innerHeight/2+(targetY-innerHeight/2-(320+p.seed*600)*travel)*scale;
-      if(y < -12 || y > innerHeight+12)continue;
-      ctx.globalAlpha=fade*(.3+.7*local);
-      ctx.fillStyle=local>.93?p.color:'#65b85b';
-      ctx.fillText(p.letter,x,y);
+  resize();
+  function clear(){ctx.clearRect(0,0,innerWidth,innerHeight);}
+  function attach(record) {
+    const box=record.element.getBoundingClientRect(),columns=new Map();
+    for(const target of record.points) {
+      // Only the viewport needs particles. Native content below it retains layout.
+      if(box.top+target.y<0||box.top+target.y>innerHeight)continue;
+      const column=Math.round((box.left+target.x)/6);
+      if(!columns.has(column))columns.set(column,[]);
+      columns.get(column).push(target);
+    }
+    const maxCount=Math.max(1,...[...columns.values()].map(list=>list.length));
+    const interval=Math.min(26,1400/maxCount);
+    const speed=Math.max(.5,innerHeight/1800);
+    const drops=[];let lastLanding=0;
+    for(const [column,targets] of columns) {
+      targets.sort((a,b)=>a.y-b.y);
+      const x=column*6-box.left;
+      targets.forEach((target,index)=>{
+        const born=record.lead+hash(column)*180+index*interval;
+        const from=-box.top-18;
+        const landing=born+(target.y-from)/speed;
+        drops.push({id:drops.length,x,from,speed,born,landing,target});
+        lastLanding=Math.max(lastLanding,landing);
+      });
+    }
+    record.drops=drops;
+    record.duration=Math.max(500,lastLanding-record.lead+400);
+  }
+  function draw(time,records) {
+    const delta=lastTime===undefined?0:Math.min(80,time-lastTime);lastTime=time;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    const rainAlpha=records.length?Math.max(...records.map(r=>1-clamp(((time-r.start-r.lead)/r.duration-.75)/.25))):.8;
+    // Every symbol retains its identity while falling; ambient columns share the
+    // same lifetime and palette as the streams that are captured by the UI.
+    for(const drop of ambient) {
+      drop.y+=delta*drop.speed;
+      if(drop.y>innerHeight+20)drop.y=-20;
+      if(drop.y<0)continue;
+      ctx.globalAlpha=drop.alpha*rainAlpha;ctx.fillStyle=drop.color;ctx.font=`${drop.size}px monospace`;
+      ctx.fillText(drop.letter,drop.x,drop.y);
+    }
+    for(const record of records) {
+      const box=record.element.getBoundingClientRect(),elapsed=time-record.start;
+      const progress=clamp((elapsed-record.lead)/record.duration);
+      const fade=1-clamp((progress-.92)/.08);
+      let captured=0;
+      for(const drop of record.drops||[]) {
+        const p=dropPosition(drop,elapsed);if(!p)continue;
+        if(p.captured)captured++;
+        const y=box.top+p.y;if(y< -12||y>innerHeight+12)continue;
+        const settle=clamp((elapsed-drop.landing)/150);
+        ctx.globalAlpha=fade*(.45+.55*settle);
+        ctx.fillStyle=p.captured?drop.target.color:'#7bc96e';
+        const fallingSize=drop.target.size?Math.max(2.5,Math.min(6,drop.target.size*2)):7;
+        const size=fallingSize+((drop.target.size||6)-fallingSize)*settle;
+        ctx.font=`${size}px monospace`;
+        // The same character falls, stops and becomes the final contour.
+        ctx.fillText(drop.target.letter,box.left+p.x,y);
+      }
+      record.element.dataset.matrixCaptured=String(captured);
+      record.element.dataset.matrixDrops=String(record.drops.length);
     }
     ctx.globalAlpha=1;
   }
-  return {resize,clear,rain,assemble};
+  return {resize,clear,attach,draw};
 }

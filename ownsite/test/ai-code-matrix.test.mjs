@@ -28,3 +28,20 @@ test('Matrix variant shares content but isolates its route, boot and motion asse
  assert.doesNotMatch(normal,/matrix-controls|ai-code-matrix/);
  assert.match(normal,/src="\/ai-code\/main.js"/);
 });
+
+test('captured code drops enter from above and keep their vertical trajectory and identity', async () => {
+ const {dropPosition}=await import('../public/ai-code-matrix/particles.js');
+ const drop={id:7,x:102,from:-18,speed:.5,born:100,target:{x:104,y:200,letter:'カ'}};
+ assert.equal(dropPosition(drop,99),null);
+ assert.deepEqual(dropPosition(drop,100),{x:102,y:-18,captured:false});
+ let previous=-Infinity;
+ for(let time=100;time<700;time++) {
+  const point=dropPosition(drop,time);
+  assert.ok(point.y>=previous && point.y<=200);
+  if(point.y<182)assert.equal(point.x,102);
+  previous=point.y;
+ }
+ assert.deepEqual(dropPosition(drop,536),{x:104,y:200,captured:true});
+ assert.deepEqual(dropPosition(drop,1000),dropPosition(drop,536));
+ assert.equal(drop.id,7);assert.equal(drop.target.letter,'カ');
+});
