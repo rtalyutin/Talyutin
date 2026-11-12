@@ -431,15 +431,18 @@ h1 { font-size: clamp(52px,6.9vw,98px); line-height: .99; margin: 18px 0 30px; f
 .footer-address a { overflow-wrap: anywhere; max-width: 100%; }
 
 /* The team keeps its dark surface in both Matrix themes. */
-#team.founders { --ink: #dcf6e5; --muted: #accbb7; --green: #80eaaa; --line: #3d654b; color-scheme: dark; background: #003c27; color: var(--ink); }
+#team.founders { --ink: #dcf6e5; --muted: #accbb7; --green: #80eaaa; --line: #3d654b; color-scheme: dark; --portrait-surface: #003c27; background: var(--portrait-surface); color: var(--ink); }
 .founders-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 40px; align-items: start; border-top: 1px solid var(--line); padding-top: 30px; }
 .founder { min-width: 0; }
-.founder-portrait { position: relative; isolation: isolate; overflow: hidden; width: 100%; aspect-ratio: 4 / 3; margin-bottom: 28px; background: #102018; }
-.founder-photo { position: absolute; inset: 0; overflow: hidden; mask-image: linear-gradient(90deg,transparent,#000 16%,#000 84%,transparent); }
-.founder-photo img { position: absolute; display: block; max-width: none; height: auto; filter: grayscale(1); }
+.founder-portrait { position: relative; isolation: isolate; overflow: hidden; width: 100%; aspect-ratio: 4 / 3; margin-bottom: 28px; background: var(--portrait-surface); }
+/* Tint the original photographs together, then dissolve into the section itself.
+   The edge treatment stays outside the eyes, nose and mouth. */
+.founder-photo { position: absolute; inset: 0; overflow: hidden; background: #b4c8b8; mask-image: linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent); }
+.founder-portrait::after { content: ''; position: absolute; z-index: 2; inset: 0; pointer-events: none; background: linear-gradient(0deg,var(--portrait-surface),transparent 12%),linear-gradient(180deg,var(--portrait-surface),transparent 6%); }
+.founder-photo img { position: absolute; display: block; max-width: none; height: auto; filter: grayscale(1) contrast(.94) brightness(1.06); mix-blend-mode: multiply; }
 .founder-photo--ilya img { width: 100%; left: 0; top: -30%; }
 .founder-photo--roman img { width: 155%; left: -20%; top: -49%; }
-.founder-glyphs { position: absolute; z-index: 1; inset: 0; margin: 0; padding: 10px 8px; overflow: hidden; white-space: pre; color: #80eaaa; font: 12px/2 var(--mono); letter-spacing: 4px; pointer-events: none; mask-image: linear-gradient(90deg,#000,transparent 22%,transparent 78%,#000); background: repeating-linear-gradient(90deg,transparent 0 8px,#80eaaa08 8px 9px); }
+.founder-glyphs { position: absolute; z-index: 1; inset: 0; margin: 0; padding: 10px 8px; overflow: hidden; white-space: pre; color: #80eaaa; opacity: .55; font: 11px/2.4 var(--mono); letter-spacing: 4px; pointer-events: none; mask-image: linear-gradient(90deg,#000,transparent 10%,transparent 90%,#000); }
 .founder-glyphs::after { content: '01  / {}\A  1  :  0\A{} 01  /\A  < >  1\A01  {} /\A  1  :  0\A{}  10 /\A  01  {}\A0  /  01\A  {}  10'; position: absolute; top: 10px; right: 8px; white-space: pre; }
 .founder h3 { margin-bottom: 8px; font-size: clamp(25px,2.4vw,34px); line-height: 1.2; }
 .founder-role { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.6; }
