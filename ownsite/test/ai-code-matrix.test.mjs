@@ -15,10 +15,11 @@ test('Matrix variant shares content but isolates its route, boot and motion asse
  assert.match(html, /rel="canonical" href="https:\/\/talyutin.ru\/ai-code-matrix"/);
  assert.match(html, /src="\/ai-code-matrix\/main.js"/);
  assert.doesNotMatch(html, /src="\/ai-code\/main.js"/);
+ assert.match(html, /id="matrix-theme-toggle" aria-pressed="false"/);
  assert.match(html, /Еремин Илья Алексеевич/);
  assert.equal((html.match(/class="case-card"/g)||[]).length,2);
  assert.match(html, /content="https:\/\/talyutin.ru\/ai-code\/social-preview.png"/);
- for(const asset of ['boot.js','main.js','particles.js','styles.css']) assert.equal((await fetch(origin+'/ai-code-matrix/'+asset)).status,200);
+ for(const asset of ['boot.js','theme.js','main.js','particles.js','styles.css']) assert.equal((await fetch(origin+'/ai-code-matrix/'+asset)).status,200);
  for(const path of ['/ai-code-matrix/','/ai-code-matrix/index.html']) {
   const redirect=await fetch(origin+path,{redirect:'manual'});assert.equal(redirect.status,308);assert.equal(redirect.headers.get('location'),'/ai-code-matrix');
  }

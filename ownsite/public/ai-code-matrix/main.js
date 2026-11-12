@@ -117,6 +117,12 @@ async function boot() {
     expanded.observe(document.querySelector('main'),{subtree:true,attributes:true,attributeFilter:['hidden','open']});
   }catch{stop();}
 }
+// Settle the current silhouettes before changing their ink; future sections
+// still assemble with the new palette, and the theme control never restarts rain.
+document.addEventListener('matrix-themechange',()=>{
+  for(const record of records)if(record.state==='active')reveal(record);
+  renderer?.clear();updateControl();
+});
 // Interaction always wins over the visual effect; no invisible focus traps.
 document.addEventListener('focusin',event=>{
   for(const record of records)if(record.element.contains(event.target))reveal(record);
