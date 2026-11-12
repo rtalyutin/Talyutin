@@ -11,12 +11,12 @@ const normalize = (v) => {
   return v.map((x) => x / length);
 };
 const clamp = (v, low = 0, high = 1) => Math.min(high, Math.max(low, v));
-export const camera = { distance: 5, focal: 3.6, centerY: 0.22 };
+export const camera = { distance: 5, focal: 3.35, centerY: 0.16 };
 export const lightDirection = normalize([-0.75, 0.85, 0.55]);
-export const glyphAlphabet = "01:+=*#@8";
+export const glyphAlphabet = ".·:;01+=*#@89";
 export const eyes = [-1, 1].map((side) => ({
   x: side * 0.455,
-  y: 0.12,
+  y: 0.30,
   z: 0.875,
 }));
 const materials = {
@@ -243,8 +243,8 @@ export function createCatModel() {
     );
   }
   ellipsoid(
-    [0, -0.025, -0.04],
-    [1.01, 0.88, 0.71],
+    [0, -0.10, -0.04],
+    [0.94, 0.98, 0.71],
     "head",
     1800,
     (p) => {
@@ -274,7 +274,7 @@ export function createCatModel() {
           ((0.71 + 0.33 * a) * (1 - t) +
             0.94 * t +
             0.035 * a * Math.sin(Math.PI * t)),
-        0.45 + 0.91 * t - 0.12 * a * (1 - t),
+        0.43 + 0.99 * t - 0.12 * a * (1 - t),
         0.11 * (1 - t) -
           0.045 * t +
           (back ? -0.19 * (1 - t) : 0.12 * Math.sin(Math.PI * t) * (1 - a * a)),
@@ -309,10 +309,10 @@ export function createCatModel() {
         1500,
       );
   }
-  ellipsoid([0, -0.64, 0.31], [0.51, 0.25, 0.39], "chin", 1500);
+  ellipsoid([0, -0.76, 0.31], [0.47, 0.30, 0.39], "chin", 1500);
   for (const side of [-1, 1])
     ellipsoid(
-      [side * 0.235, -0.33, 0.565],
+      [side * 0.235, -0.19, 0.565],
       [0.365, 0.255, 0.335],
       "muzzle",
       1800,
@@ -320,8 +320,8 @@ export function createCatModel() {
   for (const e of eyes) {
     const side = Math.sign(e.x);
     const eyePoint = (u, v) => [
-      e.x + 0.305 * u,
-      e.y + 0.177 * (1 - u * u) ** 0.7 * v + 0.038 * u * side,
+      e.x + 0.255 * u,
+      e.y + 0.145 * (1 - u * u) ** 0.7 * v + 0.038 * u * side,
       0.65 -
         0.125 * u * side +
         0.172 * (1 - u * u) * Math.sqrt(Math.max(0, 1 - v * v)),
@@ -329,7 +329,7 @@ export function createCatModel() {
     surface((u, v) => eyePoint(u * 2 - 1, v * 2 - 1), 28, 20, "eye", 2400);
     ellipsoid(
       [e.x, e.y, 0.805],
-      [0.115, 0.156, 0.04],
+      [0.082, 0.132, 0.04],
       "iris",
       2400,
       (p) => p,
@@ -338,7 +338,7 @@ export function createCatModel() {
     );
     ellipsoid(
       [e.x, e.y, e.z - 0.026],
-      [0.044, 0.128, 0.026],
+      [0.029, 0.109, 0.026],
       "pupil",
       4800,
       (p) => p,
@@ -374,7 +374,7 @@ export function createCatModel() {
         x = (u * 2 - 1) * width;
       return [
         x,
-        -0.19 - v * 0.145,
+        -0.04 - v * 0.145,
         0.935 + 0.045 * Math.sin(Math.PI * v) + 0.015 * (1 - (u * 2 - 1) ** 2),
       ];
     },
@@ -384,7 +384,7 @@ export function createCatModel() {
     4300,
   );
   tube(
-    (t) => [0, -0.33 - t * 0.1, 0.935 - t * 0.018],
+    (t) => [0, -0.18 - t * 0.1, 0.935 - t * 0.018],
     0.012,
     "mouth",
     12,
@@ -394,7 +394,7 @@ export function createCatModel() {
     tube(
       (t) => [
         side * (0.005 + t * 0.2),
-        -0.43 - 0.018 * Math.sin(t * Math.PI) + 0.045 * t * t,
+        -0.28 - 0.018 * Math.sin(t * Math.PI) + 0.045 * t * t,
         0.916 - t * 0.032,
       ],
       0.01,
@@ -406,7 +406,7 @@ export function createCatModel() {
       tube(
         (t) => [
           side * (0.5 + 0.77 * t),
-          -0.34 + row * 0.075 + (row * 0.095 + 0.025) * t - 0.055 * t * t,
+          -0.20 + row * 0.075 + (row * 0.095 + 0.025) * t - 0.055 * t * t,
           0.86 - 0.42 * t - 0.12 * t * t,
         ],
         0.0055,
@@ -415,9 +415,54 @@ export function createCatModel() {
         3500,
       );
   }
+  // Sample the visible sculpt on a regular code grid. Each glyph retains its
+  // world-space position, so the portrait still has real parallax and occlusion.
+  // Upright characters and deliberate whitespace reproduce the reference's rows.
+  const cells = new Map();
+  const dx = 0.027, dy = 0.036;
+  for (const triangle of triangles) {
+    if (triangle.part === "whisker") continue;
+    const [a,b,c] = triangle.vertices;
+    const den = (b.p[1]-c.p[1])*(a.p[0]-c.p[0])+(c.p[0]-b.p[0])*(a.p[1]-c.p[1]);
+    if (Math.abs(den) < 1e-10) continue;
+    const left = Math.ceil(Math.min(a.p[0],b.p[0],c.p[0])/dx);
+    const right = Math.floor(Math.max(a.p[0],b.p[0],c.p[0])/dx);
+    const bottom = Math.ceil(Math.min(a.p[1],b.p[1],c.p[1])/dy);
+    const top = Math.floor(Math.max(a.p[1],b.p[1],c.p[1])/dy);
+    for(let row=bottom;row<=top;row++) for(let col=left;col<=right;col++) {
+      const x=col*dx,y=row*dy;
+      const u=((b.p[1]-c.p[1])*(x-c.p[0])+(c.p[0]-b.p[0])*(y-c.p[1]))/den;
+      const v=((c.p[1]-a.p[1])*(x-c.p[0])+(a.p[0]-c.p[0])*(y-c.p[1]))/den;
+      const w=1-u-v;
+      if(u<0||v<0||w<0) continue;
+      const z=a.p[2]*u+b.p[2]*v+c.p[2]*w;
+      const key=col+','+row;
+      if(cells.has(key)&&cells.get(key).position[2]>=z) continue;
+      const n=normalize(a.n.map((value,k)=>value*u+b.n[k]*v+c.n[k]*w));
+      cells.set(key,{position:[x,y,z], normal:n, part:triangle.part, row,col});
+    }
+  }
+  const portrait = [];
+  for(const cell of cells.values()) {
+    const {position:p,part,row,col}=cell;
+    const ax=Math.abs(p[0]);
+    const feature=["pupil","lid","nose","mouth","iris"].includes(part);
+    const stripe=part==="head" && (
+      (p[1]>.4 && p[1]<.85 && (ax<.045 || Math.abs(ax-(.16+(.8-p[1])*.42))<.05)) ||
+      (ax>.6 && [-.02,-.19,-.36].some(y=>Math.abs(p[1]-y+(ax-.65)*.22)<.025))
+    );
+    const hash=Math.abs(Math.imul(row+104,374761393)^Math.imul(col+101,668265263))>>>0;
+    const ramp=feature?'08@0':stripe?'09@8':part==='eye'?'.:·':p[1]<-.50?'.·:':part==='innerEar'?'.:;1':'.:;:01';
+    if(part==='glint') continue;
+    portrait.push({position:p,normal:[0,0,1],part,
+      char:ramp[hash%ramp.length], color:feature||stripe?'#003c27':part==='eye'?'#59806a':'#19553b',
+      size: feature?1.06:1.02});
+  }
+  // Fine whiskers and mouth contours need sub-grid sampling.
+  portrait.push(...glyphs.filter(g=>["whisker","mouth","lid"].includes(g.part)).map(g=>({...g,color:'#164b32',size:0.7})));
   cached = {
     triangles,
-    glyphs,
+    glyphs: portrait,
     material: { transparent: true, opacity: 0, depthWrite: true },
     atlas: { transparent: true },
   };
