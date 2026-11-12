@@ -16,7 +16,7 @@ const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript
 const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/metrika.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const php2shellFiles = new Set(['/php2shell', '/php2shell/styles.css', '/php2shell/app.js']);
 const aiCodeFiles = new Set(['/ai-code/cat-static.svg', '/ai-code/rain.svg', '/ai-code/social-preview.png', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/cases.js', '/ai-code/events.js', '/ai-code/motion/studio.js', '/ai-code/fonts/onest-latin-cyrillic.woff2', '/ai-code/fonts/OFL.txt', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-volume.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
-const matrixFiles = new Set(['/ai-code-matrix', '/ai-code-matrix/boot.js', '/ai-code-matrix/theme.js', '/ai-code-matrix/main.js', '/ai-code-matrix/particles.js', '/ai-code-matrix/styles.css']);
+const matrixFiles = new Set(['/ai-code-matrix', '/ai-code-matrix/boot.js', '/ai-code-matrix/theme.js', '/ai-code-matrix/founders.js', '/ai-code-matrix/ilya.jpg', '/ai-code-matrix/roman.jpg', '/ai-code-matrix/main.js', '/ai-code-matrix/particles.js', '/ai-code-matrix/styles.css']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
@@ -181,6 +181,7 @@ async function handle(req, res, database) {
         if (isMatrix) html = html
           .replaceAll('https://talyutin.ru/ai-code"', 'https://talyutin.ru/ai-code-matrix"')
           .replace('<title>ИИКОТ', '<title>ИИКОТ · Matrix')
+          .replace(/<section id="team"[\s\S]*?<\/section>/, () => readFileSync(join(root, 'ai-code-matrix/founders.html'), 'utf8'))
           .replace('src="/ai-code/boot.js"', 'src="/ai-code-matrix/boot.js"')
           .replace('src="/ai-code/main.js"', 'src="/ai-code-matrix/main.js"')
           .replace('</head>', '<link rel="stylesheet" href="/ai-code-matrix/styles.css"><script defer src="/ai-code-matrix/theme.js"></script>\n</head>')

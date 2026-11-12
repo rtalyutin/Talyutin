@@ -1,3 +1,4 @@
+import { enhanceFounders } from './founders.js';
 import { enhanceCases } from '/ai-code/cases.js';
 import { enhanceDetails } from '/ai-code/motion/studio.js';
 import { createCatVolume } from '/ai-code/motion/cat-volume.js';
@@ -7,6 +8,7 @@ import { createRain, sampleInterface, clamp } from './particles.js';
 
 const reduced=matchMedia('(prefers-reduced-motion: reduce)');
 const forced=matchMedia('(forced-colors: active)');
+enhanceFounders();
 enhanceCases(reduced);
 enhanceDetails(reduced);
 const control=document.querySelector('#matrix-control');
