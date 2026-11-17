@@ -77,3 +77,21 @@ test('captured code drops enter from above and keep their vertical trajectory an
  assert.deepEqual(dropPosition(drop,1000),dropPosition(drop,536));
  assert.equal(drop.id,7);assert.equal(drop.target.letter,'カ');
 });
+
+test('a rain head advances on one column and the whole tail leaves before re-entry', async () => {
+  const {makeStreams, streamHead} = await import('../public/ai-code-matrix/particles.js');
+  for (const [width, height] of [[390,844], [1440,900]]) {
+    const streams = makeStreams(width, height);
+    assert.equal(new Set(streams.map(s => s.size)).size, 3);
+    assert.ok(new Set(streams.map(s => s.length)).size > 8);
+    for (const stream of streams) {
+      const time = (stream.period - stream.phase + 2.1) / stream.rate;
+      const first = streamHead(stream, time);
+      assert.deepEqual(first, {row:2, cycle:1});
+      assert.deepEqual(streamHead(stream, time + 1 / stream.rate), {row:3, cycle:1});
+      const end = streamHead(stream, (stream.period - stream.phase - .1) / stream.rate);
+      assert.ok(end.row - stream.length > stream.rows, 'a tail wrapped to the top while still visible');
+      assert.deepEqual(streamHead(stream, time), first, 'frame history changed the stream');
+    }
+  }
+});

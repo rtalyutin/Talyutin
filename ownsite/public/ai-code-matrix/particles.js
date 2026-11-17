@@ -1,6 +1,6 @@
 // Perspective code streams and a sampled silhouette of the real, laid-out UI.
 // No screenshot service, duplicated copy, external library or remote font.
-const letters = '01アイウエオカキクケコサシスセソタチツテト<>/{}+=*';
+const letters = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン012345789:<>+=';
 export const clamp = value => Math.max(0, Math.min(1, value));
 const hash = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 const visible = el => {
@@ -88,22 +88,35 @@ export function sampleInterface(root) {
     }
   }
   const data=ink.getImageData(0,0,mask.width,mask.height).data;
-  const points=[];
-  const step=innerWidth<700?4:5;
-  for(let y=0;y<mask.height;y+=step) for(let x=0;x<mask.width;x+=step) {
-    // Sample each cell, including one-pixel borders that lie between grid points.
-    let sample=-1, sx=x, sy=y;
-    for(let dy=0;dy<step&&y+dy<mask.height&&sample<0;dy++)
-      for(let dx=0;dx<step&&x+dx<mask.width;dx++) {
-        const i=((y+dy)*mask.width+x+dx)*4;
-        if(data[i+3]>60){sample=i;sx=x+dx;sy=y+dy;break;}
+  const points = [];
+  const cell = innerWidth < 700 ? 11 : 13;
+  // Align the sampling lattice with the falling columns, including partially
+  // visible sections and the thin outlines between two letter centres.
+  const firstX = Math.max(0, Math.floor(box.left / cell));
+  const firstY = Math.max(0, Math.floor(box.top / cell));
+  const lastX = Math.ceil(Math.min(innerWidth, box.right) / cell);
+  const lastY = Math.ceil(Math.min(innerHeight, box.bottom) / cell);
+  for (let row = firstY; row < lastY; row++) {
+    const top = Math.max(0, Math.ceil(row * cell - box.top));
+    const bottom = Math.min(mask.height, Math.ceil((row + 1) * cell - box.top));
+    for (let column = firstX; column < lastX; column++) {
+      const left = Math.max(0, Math.ceil(column * cell - box.left));
+      const right = Math.min(mask.width, Math.ceil((column + 1) * cell - box.left));
+      let found = false;
+      for (let y = top; y < bottom && !found; y++) {
+        for (let x = left; x < right; x++) {
+          const i = (y * mask.width + x) * 4;
+          if (data[i+3] <= 60) continue;
+          const glyph = Math.floor(hash(column * 19 + row * 7) * letters.length);
+          points.push({x, y, column, letter: letters[glyph], glyph,
+            color: 'rgb(' + data[i] + ',' + data[i+1] + ',' + data[i+2] + ')'});
+          found = true;
+          break;
+        }
       }
-    if(sample<0)continue;
-    points.push({x:sx,y:sy,color:`rgb(${data[sample]},${data[sample+1]},${data[sample+2]})`,seed:hash(x+y*13),letter:letters[(x+y)%letters.length]});
+    }
   }
-  // Bound work on long disclosures while distributing samples across all content.
-  const stride=Math.max(1,Math.ceil(points.length/14000));
-  return {points:points.filter((_,i)=>i%stride===0),atoms,surfaces};
+  return {points, atoms, surfaces};
 }
 // A drop is emitted above the viewport, falls in its column, then is captured.
 // There is no second particle system moving toward silhouettes from the side.
@@ -115,92 +128,212 @@ export function dropPosition(drop, elapsed) {
   const dock=clamp(1-(drop.target.y-y)/18);
   return {x:drop.x+(drop.target.x-drop.x)*dock,y,captured};
 }
-export function createRain(canvas) {
-  const ctx=canvas.getContext('2d');
-  if(!ctx) throw new Error('Canvas unavailable');
-  let ambient=[],lastTime;
-  function resize(){
-    const dpr=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.ceil(innerWidth*dpr);canvas.height=Math.ceil(innerHeight*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
-    ambient=[];
-    for(let layer=0;layer<3;layer++) {
-      const scale=800/(800+layer*500+80),spacing=26*scale;
-      for(let col=0;col<innerWidth/spacing;col++) {
-        const seed=hash(col+layer*127);
-        for(let row=0;row<14;row++)ambient.push({
-          x:(col+.5)*spacing,y:seed*(innerHeight+320)-row*20*scale,
-          speed:(.17+seed*.13)*scale,size:Math.round(15*scale),
-          alpha:(1-row/14)*(.48-layer*.1),letter:letters[(col*7+row)%letters.length],
-          layer,head:row===0,
-        });
+// Each ribbon is a travelling light on a stationary grid. A glyph keeps its
+// address as the head passes it. Only the head and occasional tail cells flip.
+export function makeStreams(width, height) {
+  const scale = width < 700 ? .89 : 1;
+  const planes = [
+    {size: 10, pitch: 31, speed: 9, opacity: .38},
+    {size: 14, pitch: 34, speed: 14, opacity: .70},
+    {size: 18, pitch: 39, speed: 19, opacity: 1},
+  ];
+  return planes.flatMap((plane, depth) => {
+    const pitch = plane.pitch * scale;
+    const size = Math.round(plane.size * scale);
+    const step = Math.round(size * 1.12);
+    const rows = Math.ceil(height / step);
+    return Array.from({length: Math.ceil(width / pitch)}, (_, column) => {
+      const seed = 1 + column * 113 + depth * 641;
+      const length = 7 + Math.floor(hash(seed + 1) * 18);
+      const gap = 4 + Math.floor(hash(seed + 2) * 20);
+      const period = rows + length + gap;
+      return {
+        x: Math.round((column + .17 + hash(seed + 3) * .66) * pitch),
+        size, step, rows, length, period, seed, opacity: plane.opacity,
+        phase: hash(seed + 4) * period,
+        rate: plane.speed * (.7 + hash(seed + 5) * .85) / 1000,
+      };
+    });
+  });
+}
+
+export function streamHead(stream, time) {
+  const travel = stream.phase + time * stream.rate;
+  const cycle = Math.floor(travel / stream.period);
+  return {row: Math.floor(travel - cycle * stream.period), cycle};
+}
+
+// Rasterize each mirrored character once at screen density, including its halo.
+// Both themes use the same glyph shapes. The light theme has a dark green core.
+function makeAtlas(dpr) {
+  const tile = 32;
+  const sheet = document.createElement('canvas');
+  const colors = ['#007346', '#d1ffb8', '#39e86a', '#e1ffe6'];
+  const cell = Math.ceil(tile * dpr);
+  sheet.width = cell * letters.length;
+  sheet.height = cell * colors.length;
+  const ink = sheet.getContext('2d', {willReadFrequently: true});
+  ink.font = '600 ' + Math.round(cell * .68) + 'px "MS Gothic","Hiragino Kaku Gothic ProN","Noto Sans Mono CJK JP",monospace';
+  ink.textAlign = 'center';
+  ink.textBaseline = 'middle';
+  colors.forEach((color, band) => {
+    ink.fillStyle = color;
+    ink.shadowColor = band === 3 ? '#57ff82' : '#39ce64';
+    ink.shadowBlur = band % 2 ? cell * .11 : 0;
+    for (let i = 0; i < letters.length; i++) {
+      ink.save();
+      ink.translate((i + .5) * cell, (band + .52) * cell);
+      ink.scale(-.82, 1);
+      if (band === 1) {
+        ink.lineWidth = cell * .075;
+        ink.strokeStyle = '#16713f';
+        ink.lineJoin = 'round';
+        ink.strokeText(letters[i], 0, 0);
       }
+      ink.fillText(letters[i], 0, 0);
+      ink.restore();
     }
-    lastTime=undefined;
+  });
+  return {sheet, cell};
+}
+
+function paintGlyph(ctx, atlas, index, band, x, y, size) {
+  const extent = size / .68;
+  ctx.drawImage(atlas.sheet, index * atlas.cell, band * atlas.cell, atlas.cell, atlas.cell,
+    x - extent / 2, y - extent / 2, extent, extent);
+}
+
+function inDarkArea(areas, x, y) {
+  return areas.some(rect => x >= rect.left && x < rect.right && y >= rect.top && y < rect.bottom);
+}
+
+function paintStreams(ctx, atlas, streams, time, opacity, dark, areas) {
+  for (const stream of streams) {
+    const {row: head, cycle} = streamHead(stream, time);
+    const first = Math.max(0, head - stream.length + 1);
+    const last = Math.min(head, stream.rows);
+    for (let row = first; row <= last; row++) {
+      const age = head - row;
+      const address = stream.seed + cycle * 7499 + row * 89;
+      const charged = age === 0;
+      // The head writes a new glyph; most deposited glyphs stay still.
+      const clock = charged ? Math.floor(time / 80) : address % 9 === 0 ? Math.floor(time / 480) : 0;
+      const index = ((address * 31 + clock * 17) >>> 0) % letters.length;
+      const y = (row + .5) * stream.step;
+      const onDark = dark || inDarkArea(areas, stream.x, y);
+      const band = (onDark ? 2 : 0) + Number(charged);
+      const strength = charged ? 1 : .86 * (1 - age / stream.length) ** 1.5;
+      ctx.globalAlpha = opacity * stream.opacity * strength;
+      paintGlyph(ctx, atlas, index, band, stream.x, y, stream.size);
+    }
+  }
+}
+
+// Keep one arriving glyph per grid cell. Runs are separated by blank cells;
+// neighbouring columns have different launch times, spacing and velocities.
+function planCapture(points, box, height, cell) {
+  const lanes = new Map();
+  for (const target of points) {
+    if (!lanes.has(target.column)) lanes.set(target.column, []);
+    lanes.get(target.column).push(target);
+  }
+  const drops = [];
+  for (const [column, targets] of lanes) {
+    const speed = Math.max(.38, height / 1450) * (.88 + hash(column + 23) * .47);
+    const run = 7 + Math.floor(hash(column + 11) * 9);
+    const x = (column + .5) * cell - box.left;
+    const from = -box.top - cell;
+    let born = hash(column + 71) * 260;
+    let index = 0;
+    for (const target of targets) {
+      const landing = born + (target.y - from) / speed;
+      drops.push({id: drops.length, x, from, speed, born, landing, target,
+        glyph: target.glyph, age: index % run, run});
+      born += cell / speed * (index % run === run - 1 ? 3.5 : 1);
+      index++;
+    }
+  }
+  return drops.sort((a,b) => a.landing - b.landing);
+}
+
+export function createRain(canvas) {
+  // Keep the sprite atlas, captured silhouettes and output on the same CPU
+  // raster backend. Hundreds of tiny GPU texture copies stall software GPUs.
+  const ctx = canvas.getContext('2d', {willReadFrequently: true});
+  if (!ctx) throw new Error('Canvas unavailable');
+  let streams, atlas, density;
+  const darkPanels = [...document.querySelectorAll('.cat-stage,#team,#request')];
+  function resize() {
+    const dpr = Math.min(devicePixelRatio || 1, 1.5);
+    canvas.width = Math.ceil(innerWidth * dpr);
+    canvas.height = Math.ceil(innerHeight * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (density !== dpr) atlas = makeAtlas(dpr);
+    density = dpr;
+    streams = makeStreams(innerWidth, innerHeight);
   }
   resize();
-  function clear(){ctx.clearRect(0,0,innerWidth,innerHeight);}
+  function clear() { ctx.clearRect(0, 0, innerWidth, innerHeight); }
+
   function attach(record) {
-    const box=record.element.getBoundingClientRect(),columns=new Map();
-    for(const target of record.points) {
-      // Only the viewport needs particles. Native content below it retains layout.
-      if(box.top+target.y<0||box.top+target.y>innerHeight)continue;
-      const column=Math.round((box.left+target.x)/6);
-      if(!columns.has(column))columns.set(column,[]);
-      columns.get(column).push(target);
-    }
-    const maxCount=Math.max(1,...[...columns.values()].map(list=>list.length));
-    const interval=Math.min(16,550/maxCount);
-    const speed=Math.max(1,innerHeight/780);
-    const drops=[];let lastLanding=0;
-    for(const [column,targets] of columns) {
-      targets.sort((a,b)=>a.y-b.y);
-      const x=column*6-box.left;
-      targets.forEach((target,index)=>{
-        const born=record.lead+hash(column)*180+index*interval;
-        const from=-box.top-18;
-        const landing=born+(target.y-from)/speed;
-        drops.push({id:drops.length,x,from,speed,born,landing,target});
-        lastLanding=Math.max(lastLanding,landing);
-      });
-    }
-    record.drops=drops;
-    record.duration=Math.max(500,lastLanding-record.lead+160);
+    const box = record.element.getBoundingClientRect();
+    const cell = innerWidth < 700 ? 11 : 13;
+    record.drops = planCapture(record.points, box, innerHeight, cell);
+    const lastLanding = record.drops.at(-1)?.landing || 0;
+    record.duration = Math.max(700, lastLanding / .90 + 100);
+    const sheet = document.createElement('canvas');
+    const top = Math.max(0, -box.top) - cell;
+    sheet.width = Math.ceil(box.width);
+    sheet.height = Math.ceil(Math.min(box.height, innerHeight) + 2 * cell);
+    const pen = sheet.getContext('2d', {willReadFrequently: true});
+    pen.font = '600 ' + Math.round(cell * .78) + 'px monospace';
+    pen.textAlign = 'center';
+    pen.textBaseline = 'middle';
+    record.capture = {sheet, pen, top, count: 0, cell};
   }
-  function draw(time,records) {
-    const dark=document.documentElement.dataset.matrixTheme==='dark';
-    const delta=lastTime===undefined?0:Math.min(80,time-lastTime);lastTime=time;
-    ctx.textAlign='center';ctx.textBaseline='middle';
-    const rainAlpha=records.length?Math.max(...records.map(r=>1-clamp(((time-r.start-r.lead)/r.duration-.75)/.25))):.8;
-    // Every symbol retains its identity while falling; ambient columns share the
-    // same lifetime and palette as the streams that are captured by the UI.
-    for(const drop of ambient) {
-      drop.y+=delta*drop.speed;
-      if(drop.y>innerHeight+20)drop.y=-20;
-      if(drop.y<0)continue;
-      ctx.globalAlpha=drop.alpha*rainAlpha;ctx.fillStyle=dark?(drop.head?'#adffd0':drop.layer===0?'#59dc87':'#338a52'):(drop.head?'#62b963':drop.layer===0?'#84cf76':'#aadf9e');ctx.font=`${drop.size}px monospace`;
-      ctx.fillText(drop.letter,drop.x,drop.y);
+
+  function drawCapture(record, time, dark, areas) {
+    const box = record.element.getBoundingClientRect();
+    const elapsed = time - record.start - record.lead;
+    const progress = clamp(elapsed / record.duration);
+    const fade = 1 - clamp((progress - .92) / .08);
+    const {drops, capture} = record;
+    while (capture.count < drops.length && drops[capture.count].landing <= elapsed) {
+      const target = drops[capture.count++].target;
+      capture.pen.fillStyle = target.color;
+      capture.pen.save();
+      capture.pen.translate(target.x, target.y - capture.top);
+      capture.pen.scale(-.82, 1);
+      capture.pen.fillText(target.letter, 0, 0);
+      capture.pen.restore();
     }
-    for(const record of records) {
-      const box=record.element.getBoundingClientRect(),elapsed=time-record.start;
-      const progress=clamp((elapsed-record.lead)/record.duration);
-      const fade=1-clamp((progress-.92)/.08);
-      let captured=0;
-      for(const drop of record.drops||[]) {
-        const p=dropPosition(drop,elapsed);if(!p)continue;
-        if(p.captured)captured++;
-        const y=box.top+p.y;if(y< -12||y>innerHeight+12)continue;
-        const settle=clamp((elapsed-drop.landing)/150);
-        ctx.globalAlpha=fade*(.45+.55*settle);
-        ctx.fillStyle=p.captured?drop.target.color:(dark?'#64df8b':'#7bc96e');
-        const fallingSize=drop.target.size?Math.max(2.5,Math.min(6,drop.target.size*2)):7;
-        const size=fallingSize+((drop.target.size||6)-fallingSize)*settle;
-        ctx.font=`${size}px monospace`;
-        // The same character falls, stops and becomes the final contour.
-        ctx.fillText(drop.target.letter,box.left+p.x,y);
-      }
-      record.element.dataset.matrixCaptured=String(captured);
-      record.element.dataset.matrixDrops=String(record.drops.length);
+    ctx.globalAlpha = fade;
+    ctx.drawImage(capture.sheet, box.left, box.top + capture.top);
+    for (let i = capture.count; i < drops.length; i++) {
+      const drop = drops[i];
+      const p = dropPosition(drop, elapsed);
+      if (!p) continue;
+      const x = box.left + p.x, y = box.top + p.y;
+      if (y < -capture.cell || y > innerHeight + capture.cell) continue;
+      const head = drop.age === 0;
+      const band = (dark || inDarkArea(areas, x, y) ? 2 : 0) + Number(head);
+      ctx.globalAlpha = fade * (head ? .97 : .16 + .5 * (1 - drop.age / drop.run));
+      paintGlyph(ctx, atlas, drop.glyph, band, x, y, capture.cell * .82);
     }
-    ctx.globalAlpha=1;
+    record.element.dataset.matrixCaptured = String(capture.count);
   }
-  return {resize,clear,attach,draw};
+
+  function draw(time, records) {
+    const dark = document.documentElement.dataset.matrixTheme === 'dark';
+    const areas = dark ? [] : darkPanels.map(el => el.getBoundingClientRect())
+      .filter(rect => rect.bottom > 0 && rect.top < innerHeight);
+    const strength = records.reduce((max, r) => {
+      const progress = clamp((time - r.start - r.lead) / r.duration);
+      return Math.max(max, 1 - clamp((progress - .46) / .45));
+    }, records.length ? 0 : 1);
+    if (strength > 0) paintStreams(ctx, atlas, streams, time, strength, dark, areas);
+    for (const record of records) drawCapture(record, time, dark, areas);
+    ctx.globalAlpha = 1;
+  }
+  return {resize, clear, attach, draw};
 }

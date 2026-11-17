@@ -22,10 +22,13 @@ function reveal(record) {
   record.element.classList.remove('matrix-pending','matrix-assembling');
   for(const atom of record.atoms)atom.classList.remove('matrix-piece');
   for(const surface of record.surfaces)surface.classList.remove('matrix-surface');
-  record.points=[];record.drops=[];record.state='ready';record.element.dataset.matrixState='ready';
+  record.points=[];record.drops=[];record.capture=null;record.state='ready';record.element.dataset.matrixState='ready';
   if(record.element.id==='intro') {gaze?.wake();}
 }
-function updateControl(){control.textContent=records.some(r=>r.state!=='ready')?'Пропустить сборку':'Повторить сборку';}
+function updateControl() {
+  const label = records.some(r => r.state !== 'ready') ? 'Пропустить сборку' : 'Повторить сборку';
+  if (control.textContent !== label) control.textContent = label;
+}
 function finishAll() {
   observer?.disconnect();
   records.forEach(reveal);
@@ -44,7 +47,12 @@ function frame(time) {
       if(box.bottom<0||box.top>innerHeight){reveal(record);continue;}
       const elapsed=time-record.start;
       const progress=clamp((elapsed-record.lead)/record.duration);
-      if(progress>=1){reveal(record);continue;}
+      if (progress >= 1) {
+        if (record.handoff) { reveal(record); continue; }
+        // A slow frame can jump across the entire crossfade. Paint all landed
+        // glyphs once before handing the silhouette to the native elements.
+        record.start = time - record.lead - record.duration * .925;
+      }
       active=true;
     }
     if(active)renderer.draw(time,records.filter(record=>record.state==='active'));
@@ -67,8 +75,9 @@ function start(record) {
   if(disabled||record.state!=='pending')return;
   try {
     const sampled=sampleInterface(record.element);
-    Object.assign(record,sampled,{state:'active',start:performance.now(),lead:record.initial?100:50,duration:record.initial?3400:1650,handoff:false});
+    Object.assign(record,sampled,{state:'active',start:performance.now(),lead:record.initial?360:80,duration:record.initial?3400:1650,handoff:false});
     renderer.attach(record);
+    record.element.dataset.matrixDrops=String(record.drops.length);
     record.element.dataset.matrixTargets=String(record.points.length);
     record.element.dataset.matrixState='assembling';
     record.element.classList.add('matrix-assembling');
@@ -91,7 +100,9 @@ async function boot() {
     // Start perspective rain while fonts resolve; native content is released by
     // the independent watchdog if initialization cannot complete.
     const waiting=time=>{renderer.clear();renderer.draw(time,[]);return true;};scheduler.add(waiting);
-    await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,1100))]);
+    const poster = cat.querySelector('img');
+    const assets = Promise.all([document.fonts.ready, poster?.decode?.().catch(() => {})]);
+    await Promise.race([assets, new Promise(resolve => setTimeout(resolve, 1100))]);
     scheduler.remove(waiting);
     if(disabled||window.matrixBootExpired){stop();return;}
     try{volume=createMatrixCat(cat);}catch{volume=null;}
