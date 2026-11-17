@@ -159,21 +159,139 @@ section:not(.hero),#cases { padding: clamp(58px,7.2vw,105px) var(--gutter); bord
 #process .section-body > p + p { margin-top:4px; }
 #process .section-body > details,#pricing details { border-color:var(--line); }
 #team.founders {
-  display:block; --ink:#ecf3e9; --muted:#b5c9ba; --green:#caff80; --line:#385044;
-  --portrait-surface:#10251c; color:var(--ink); background:var(--portrait-surface);
+  display: block;
+  --ink: #ecf3e9;
+  --green: #caff80;
+  --line: #415c4b;
+  color: var(--ink);
+  background: #10251c;
 }
-.founders-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:clamp(22px,5vw,72px); padding-top:25px; }
-.founder-portrait { width:100%; max-width:none; aspect-ratio:1.94; border-radius:7px; background:#234334; }
-.founder-photo { inset:0; mask-image:none; }
-.founder-photo--ilya img { top:-66%; }
-.founder-photo--roman img { top:-75%; }
-.founder-portrait::after { background:linear-gradient(0deg,#11291d48,transparent 25%); }
-.founder-glyphs { opacity:.4; }
-.founder + .founder { padding:0; border:0; }
-.founder h3 { font-size:clamp(27px,3vw,43px); }
-.founder-role,.founder-responsibility { min-height:0; }
-.founder-responsibility { margin-top:16px; }
-.founder-experience { margin-top:21px; }
+.founders-grid {
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: clamp(16px,2vw,30px);
+  padding: 0;
+  border: 0;
+}
+.founder {
+  --card-ink: #14261c;
+  --card-muted: #43594a;
+  --card-rule: #aebdb0;
+  --card-pad: clamp(18px,1.8vw,28px);
+  display: grid;
+  grid-template-columns: minmax(0,.84fr) minmax(0,1.16fr);
+  grid-template-areas: "portrait name" "portrait role" "portrait task" "experience experience";
+  grid-template-rows: 1fr auto 1fr auto;
+  align-items: start;
+  column-gap: var(--card-pad);
+  padding: var(--card-pad);
+  border-radius: 3px 20px 3px 3px;
+  color: var(--card-ink);
+  background: #e7eee1;
+  color-scheme: light;
+}
+.founder + .founder { border: 0; padding: var(--card-pad); background: #f4f2e8; }
+.founder-portrait {
+  grid-area: portrait;
+  align-self: center;
+  width: 100%;
+  max-width: none;
+  aspect-ratio: 4 / 5;
+  margin: 0;
+  background: #ced7ca;
+}
+.founder-photo { inset: 0; mask-image: none; background: #f1f1ec; }
+.founder-photo img {
+  width: 100%;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.05);
+}
+.founder-photo--ilya img { object-position: 48% 65%; transform: scale(1.12); transform-origin: 48% 51%; }
+.founder-photo--roman img { object-position: 45% 61%; transform: scale(1.83); transform-origin: 45% 15%; }
+.founder-portrait::after,.founder-glyphs { display: none; }
+.founder h3 {
+  grid-area: name;
+  align-self: end;
+  margin: 0;
+  color: var(--card-ink);
+  font-size: clamp(29px,2.7vw,42px);
+  line-height: 1.04;
+  letter-spacing: -.052em;
+}
+.founder-role {
+  grid-area: role;
+  min-height: 0;
+  margin: 9px 0 0;
+  color: #2a603f;
+  font-size: clamp(15px,1.15vw,17px);
+  font-weight: 620;
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+.founder-responsibility {
+  grid-area: task;
+  min-height: 0;
+  margin: 18px 0 0;
+  color: var(--card-ink);
+  font-size: clamp(16px,1.25vw,19px);
+  line-height: 1.4;
+  text-wrap: pretty;
+}
+.founder-experience {
+  grid-area: experience;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 14px;
+  align-items: start;
+  margin-top: var(--card-pad);
+  padding-top: 14px;
+  border-color: var(--card-rule);
+}
+.founder-experience h4 {
+  margin: 0;
+  color: var(--card-muted);
+  font: 600 11px/1.5 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.founder-experience-list { grid-column: 1; color: var(--card-ink); font-size: 15px; line-height: 1.5; }
+.founder-experience button {
+  grid-area: 1 / 2 / 3 / 3;
+  align-self: start;
+  gap: 4px;
+  margin: 0;
+  padding: 4px 13px;
+  border: 1px solid var(--card-rule);
+  border-radius: 24px;
+  color: #245339;
+  font-weight: 650;
+}
+.founder-experience button:hover { background: #dbe6d8; color: #103722; }
+.founder-experience button:focus-visible { outline-color: #245339; }
+@media (min-width: 600px) and (max-width: 1059px) {
+  .founders-grid { grid-template-columns: 1fr; }
+  .founder {
+    grid-template-columns: minmax(145px,.55fr) minmax(0,1.45fr);
+    grid-template-areas: "portrait name" "portrait role" "portrait task" "portrait experience";
+    grid-template-rows: auto auto auto 1fr;
+  }
+  .founder-portrait { max-width: 225px; }
+}
+@media (max-width: 599px) {
+  .founders-grid { grid-template-columns: 1fr; }
+  .founder {
+    --card-pad: 16px;
+    grid-template-columns: clamp(90px,27vw,134px) minmax(0,1fr);
+    grid-template-areas: "portrait name" "portrait role" "task task" "experience experience";
+    grid-template-rows: 1fr 1fr auto auto;
+    column-gap: 15px;
+  }
+  .founder h3 { font-size: clamp(24px,7vw,34px); }
+  .founder-role { font-size: 15px; }
+  .founder-experience { grid-template-columns: 1fr; gap: 4px; }
+  .founder-experience button { grid-area: auto; justify-self: start; margin-top: 7px; }
+}
 #pricing { background:var(--wash); }
 .large,#request .large { font-size:clamp(21px,2.15vw,30px); letter-spacing:-.035em; line-height:1.36; }
 #request {
@@ -236,9 +354,7 @@ section:not(.hero),#cases { padding: clamp(58px,7.2vw,105px) var(--gutter); bord
   .hint { font-size:12px; }
   section:not(.hero),section:not(.hero):not(#cases),#cases { display:block; padding-block:45px; }
   #cases h2,#team h2,section:not(.hero) h2 { margin:12px 0 22px; font-size:clamp(33px,8.5vw,46px); }
-  #cases .cases-grid,.founders-grid { grid-template-columns:1fr; gap:20px; }
-  .founders-grid { gap:34px; }
-  .founder-portrait { margin-bottom:16px; }
+  #cases .cases-grid { grid-template-columns:1fr; gap:20px; }
   .case-preview { padding:21px; gap:16px; }
   .site-footer { padding-bottom:80px; }
   .matrix-controls { right:8px; bottom:max(7px,env(safe-area-inset-bottom)); }
