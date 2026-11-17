@@ -10,13 +10,16 @@ import { openRemotePortfolio } from './remote-db.mjs';
 import { renderCatalogue, renderCase } from './public/registry.js';
 import { offlineWorks } from './public/offline-works.js';
 import { renderCases } from './ai-code-cases.mjs';
+import { catPoster } from './public/ai-code-matrix/cat.js';
+
+const matrixPortrait = catPoster();
 
 const root = resolve(import.meta.dirname, 'public');
 const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.txt': 'text/plain', '.woff2': 'font/woff2' };
 const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/metrika.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const php2shellFiles = new Set(['/php2shell', '/php2shell/styles.css', '/php2shell/app.js']);
 const aiCodeFiles = new Set(['/ai-code/cat-static.svg', '/ai-code/rain.svg', '/ai-code/social-preview.png', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/cases.js', '/ai-code/events.js', '/ai-code/founders.js', '/ai-code/ilya.jpg', '/ai-code/roman.jpg', '/ai-code/motion/studio.js', '/ai-code/fonts/onest-latin-cyrillic.woff2', '/ai-code/fonts/OFL.txt', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-volume.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
-const matrixFiles = new Set(['/ai-code-matrix', '/ai-code-matrix/boot.js', '/ai-code-matrix/theme.js', '/ai-code-matrix/main.js', '/ai-code-matrix/particles.js', '/ai-code-matrix/styles.css']);
+const matrixFiles = new Set(['/ai-code-matrix', '/ai-code-matrix/boot.js', '/ai-code-matrix/theme.js', '/ai-code-matrix/main.js', '/ai-code-matrix/particles.js', '/ai-code-matrix/cat.js', '/ai-code-matrix/cat.svg', '/ai-code-matrix/styles.css']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
   '/tochki/', '/tochki/index.html', '/tochki/app.js', '/tochki/game.css',
@@ -180,6 +183,7 @@ async function handle(req, res, database) {
         let html = readFileSync(resolve(root, '.' + path), 'utf8').replace('{{AI_CODE_METRIKA_ID}}', counter).replace('{{AI_CODE_CASES}}', renderCases()).replace('{{AI_CODE_FOUNDERS}}', () => readFileSync(join(root, 'ai-code/founders.html'), 'utf8'));
         if (isMatrix) html = html
           .replaceAll('https://talyutin.ru/ai-code"', 'https://talyutin.ru/ai-code-matrix"')
+          .replace('src="/ai-code/cat-static.svg" width="640" height="590"', 'src="/ai-code-matrix/cat.svg" width="480" height="410"')
           .replace('<title>ИИКОТ', '<title>ИИКОТ · Matrix')
           .replace('src="/ai-code/boot.js"', 'src="/ai-code-matrix/boot.js"')
           .replace('src="/ai-code/main.js"', 'src="/ai-code-matrix/main.js"')
@@ -191,6 +195,7 @@ async function handle(req, res, database) {
           ...(process.env.ALLOW_INDEXING === '1' ? {} : { 'X-Robots-Tag': 'noindex, nofollow' })
         });
       }
+      if (path === '/ai-code-matrix/cat.svg') return sendAiCode(req, res, mime['.svg'], matrixPortrait);
       return sendAiCode(req, res, mime[extname(path)], readFileSync(resolve(root, '.' + path)));
     }
     catch { return send(res, 404, 'text/plain', 'Not found'); }

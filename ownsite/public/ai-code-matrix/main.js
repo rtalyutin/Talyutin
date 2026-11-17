@@ -1,7 +1,7 @@
 import { enhanceFounders } from '/ai-code/founders.js';
 import { enhanceCases } from '/ai-code/cases.js';
 import { enhanceDetails } from '/ai-code/motion/studio.js';
-import { createCatVolume } from '/ai-code/motion/cat-volume.js';
+import { createMatrixCat } from './cat.js';
 import { createCatGaze } from '/ai-code/motion/cat-gaze.js';
 import { createScheduler } from '/ai-code/motion/glyph-renderer.js';
 import { createRain, sampleInterface, clamp } from './particles.js';
@@ -67,7 +67,7 @@ function start(record) {
   if(disabled||record.state!=='pending')return;
   try {
     const sampled=sampleInterface(record.element);
-    Object.assign(record,sampled,{state:'active',start:performance.now(),lead:record.initial?650:150,duration:record.initial?3400:1650,handoff:false});
+    Object.assign(record,sampled,{state:'active',start:performance.now(),lead:record.initial?100:50,duration:record.initial?3400:1650,handoff:false});
     renderer.attach(record);
     record.element.dataset.matrixTargets=String(record.points.length);
     record.element.dataset.matrixState='assembling';
@@ -94,7 +94,7 @@ async function boot() {
     await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,1100))]);
     scheduler.remove(waiting);
     if(disabled||window.matrixBootExpired){stop();return;}
-    try{volume=createCatVolume(cat);}catch{volume=null;}
+    try{volume=createMatrixCat(cat);}catch{volume=null;}
     if(volume)gaze=createCatGaze(cat,scheduler,()=>records[0].state==='ready',volume);
     observer=new IntersectionObserver(entries=>{for(const entry of entries)if(entry.isIntersecting)start(records.find(r=>r.element===entry.target));},{threshold:0});
     prepare();

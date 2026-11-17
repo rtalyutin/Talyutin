@@ -1,7 +1,5 @@
-import { catGlyphs } from '../ai-code/motion/cat-model.js';
 // Perspective code streams and a sampled silhouette of the real, laid-out UI.
 // No screenshot service, duplicated copy, external library or remote font.
-let catSurface;
 const letters = '01アイウエオカキクケコサシスセソタチツテト<>/{}+=*';
 export const clamp = value => Math.max(0, Math.min(1, value));
 const hash = n => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
@@ -11,13 +9,12 @@ const visible = el => {
   return r.width > 0 && r.height > 0 && style.display !== 'none' && style.visibility !== 'hidden' && !el.closest('[hidden],script,canvas');
 };
 export function sampleInterface(root) {
-  const dark=document.documentElement.dataset.matrixTheme==='dark';
   const box = root.getBoundingClientRect();
   const mask = document.createElement('canvas');
   mask.width = Math.ceil(box.width); mask.height = Math.ceil(box.height);
   const ink = mask.getContext('2d', { willReadFrequently: true });
   if (!ink) throw new Error('2D canvas unavailable');
-  const all = [...root.querySelectorAll('*')].filter(visible);
+  const all = [...root.querySelectorAll('*')].filter(el => !el.closest('#cat') && visible(el));
   const atomSelector = 'h1,h2,h3,h4,p,a,button,summary,dt,dd,.number,.frame-corner';
   const atoms = all.filter(el => el.matches(atomSelector) && !el.parentElement.closest(atomSelector));
   const surfaces = [];
@@ -79,19 +76,16 @@ export function sampleInterface(root) {
       ink.fillText(node.data[i],r.left-box.left,r.top-box.top+(r.height-size)/2+size*.8);
     }
   }
-  // Project the same depth-tested cat surface into the shared rain target set.
-  // Its native WebGL canvas stays hidden until these rain drops have landed.
+  // The poster is generated from the live mesh. Sample its actual silhouette so
+  // falling code lands on the eyes, ear tips and whiskers seen in the next frame.
   const cat = root.querySelector('#cat');
-  const catPoints=[];
-  if(cat) {
-    atoms.push(cat);
-    const r=cat.getBoundingClientRect(), scale=r.height/590;
-    for(const g of (catSurface ||= catGlyphs())) catPoints.push({
-      x:r.left-box.left+r.width/2+(g.x-320)*scale,
-      y:r.top-box.top+g.y*scale,
-      color:dark?'#'+g.color.slice(1).match(/../g).map(c=>Math.min(255,parseInt(c,16)*2).toString(16).padStart(2,'0')).join(''):g.color,seed:hash(g.x+g.y*13),letter:g.char,
-      size:Math.max(1.5,7.5*Math.hypot(g.matrix[0],g.matrix[1])*scale),
-    });
+  if (cat) {
+    const poster = cat.querySelector('img');
+    if (poster.complete && poster.naturalWidth) {
+      const rect = poster.getBoundingClientRect();
+      ink.drawImage(poster, rect.left-box.left, rect.top-box.top, rect.width, rect.height);
+      atoms.push(cat);
+    }
   }
   const data=ink.getImageData(0,0,mask.width,mask.height).data;
   const points=[];
@@ -109,7 +103,7 @@ export function sampleInterface(root) {
   }
   // Bound work on long disclosures while distributing samples across all content.
   const stride=Math.max(1,Math.ceil(points.length/14000));
-  return {points:[...points.filter((_,i)=>i%stride===0),...catPoints],atoms,surfaces};
+  return {points:points.filter((_,i)=>i%stride===0),atoms,surfaces};
 }
 // A drop is emitted above the viewport, falls in its column, then is captured.
 // There is no second particle system moving toward silhouettes from the side.
@@ -154,8 +148,8 @@ export function createRain(canvas) {
       columns.get(column).push(target);
     }
     const maxCount=Math.max(1,...[...columns.values()].map(list=>list.length));
-    const interval=Math.min(26,1400/maxCount);
-    const speed=Math.max(.5,innerHeight/1800);
+    const interval=Math.min(16,550/maxCount);
+    const speed=Math.max(1,innerHeight/780);
     const drops=[];let lastLanding=0;
     for(const [column,targets] of columns) {
       targets.sort((a,b)=>a.y-b.y);
@@ -169,7 +163,7 @@ export function createRain(canvas) {
       });
     }
     record.drops=drops;
-    record.duration=Math.max(500,lastLanding-record.lead+400);
+    record.duration=Math.max(500,lastLanding-record.lead+160);
   }
   function draw(time,records) {
     const dark=document.documentElement.dataset.matrixTheme==='dark';

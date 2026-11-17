@@ -19,7 +19,7 @@ test('Matrix variant shares content but isolates its route, boot and motion asse
  assert.match(html, /Еремин Илья Алексеевич/);
  assert.equal((html.match(/class="case-card"/g)||[]).length,2);
  assert.match(html, /content="https:\/\/talyutin.ru\/ai-code\/social-preview.png"/);
- for(const asset of ['boot.js','theme.js','main.js','particles.js','styles.css']) assert.equal((await fetch(origin+'/ai-code-matrix/'+asset)).status,200);
+ for(const asset of ['boot.js','theme.js','main.js','particles.js','styles.css','cat.js','cat.svg']) assert.equal((await fetch(origin+'/ai-code-matrix/'+asset)).status,200);
  for(const path of ['/ai-code-matrix/','/ai-code-matrix/index.html']) {
   const redirect=await fetch(origin+path,{redirect:'manual'});assert.equal(redirect.status,308);assert.equal(redirect.headers.get('location'),'/ai-code-matrix');
  }
@@ -50,7 +50,14 @@ test('Matrix variant shares content but isolates its route, boot and motion asse
  assert.equal(normal.match(/<section id="team"[\s\S]*?<\/section>/)[0],team);
  assert.equal((await fetch(origin+'/ai-code/founders.js')).status,200);
  const sections=markup=>[...markup.matchAll(/<section id="(?!team")[^" ]+"[\s\S]*?<\/section>/g)].map(match=>match[0]);
- assert.deepEqual(sections(html),sections(normal));
+ const matrixCat = 'src="/ai-code-matrix/cat.svg" width="480" height="410"';
+ const originalCat = 'src="/ai-code/cat-static.svg" width="640" height="590"';
+ assert.ok(html.includes(matrixCat));
+ assert.ok(normal.includes(originalCat));
+ assert.deepEqual(sections(html.replace(matrixCat,originalCat)),sections(normal));
+ const poster = await fetch(origin+'/ai-code-matrix/cat.svg');
+ const {catPoster} = await import('../public/ai-code-matrix/cat.js');
+ assert.equal(await poster.text(),catPoster(), 'static and interactive portraits share their geometry');
 
 });
 
