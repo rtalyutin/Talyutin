@@ -2,7 +2,9 @@ import { gzipSync } from 'node:zlib';
 import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { BlockList, isIP } from 'node:net';
 import { extname, join, resolve, relative, isAbsolute } from 'node:path';
+import geoip from 'geoip-country';
 import { openDatabase, publicWorks, publicWork, publicContacts } from './db.mjs';
 import { openPostgres } from './pg-db.mjs';
 import { seedWorks } from './seed-works.mjs';
@@ -18,7 +20,15 @@ const root = resolve(import.meta.dirname, 'public');
 const mime = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.txt': 'text/plain', '.woff2': 'font/woff2' };
 const staticFiles = new Set(['/favicon.svg', '/app.js', '/registry.js', '/offline-works.js', '/motion.js', '/metrika.js', '/styles.css', '/tool.html', '/tool.js', '/tool.css']);
 const php2shellFiles = new Set(['/php2shell', '/php2shell/styles.css', '/php2shell/app.js']);
-const aiCodeFiles = new Set(['/ai-code/cat-static.svg', '/ai-code/rain.svg', '/ai-code/social-preview.png', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/cases.js', '/ai-code/events.js', '/ai-code/founders.js', '/ai-code/ilya.jpg', '/ai-code/roman.jpg', '/ai-code/motion/studio.js', '/ai-code/fonts/onest-latin-cyrillic.woff2', '/ai-code/fonts/OFL.txt', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-volume.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
+const aiCodeRussianPaths = new Set(['/ai-code', '/ai-code/', '/ai-code/index.html']);
+const aiCodeEnglish = '/ai-code/en';
+const aiCodeProxyNetwork = new BlockList();
+for (const [address, mask] of [['10.0.0.0', 8], ['127.0.0.0', 8], ['172.16.0.0', 12], ['192.168.0.0', 16]]) {
+  aiCodeProxyNetwork.addSubnet(address, mask);
+}
+aiCodeProxyNetwork.addAddress('::1', 'ipv6');
+aiCodeProxyNetwork.addSubnet('fc00::', 7, 'ipv6');
+const aiCodeFiles = new Set(['/ai-code/cat-static.svg', '/ai-code/rain.svg', '/ai-code/social-preview.png', '/ai-code/social-preview-en.png', '/ai-code', '/ai-code/styles.css', '/ai-code/boot.js', '/ai-code/main.js', '/ai-code/cases.js', '/ai-code/events.js', '/ai-code/founders.js', '/ai-code/ilya.jpg', '/ai-code/roman.jpg', '/ai-code/motion/studio.js', '/ai-code/fonts/onest-latin-cyrillic.woff2', '/ai-code/fonts/OFL.txt', '/ai-code/motion/config.js', '/ai-code/motion/cat-model.js', '/ai-code/motion/cat-volume.js', '/ai-code/motion/cat-gaze.js', '/ai-code/motion/glyph-renderer.js', '/ai-code/motion/sections.js']);
 const matrixFiles = new Set(['/ai-code-matrix', '/ai-code-matrix/boot.js', '/ai-code-matrix/theme.js', '/ai-code-matrix/main.js', '/ai-code-matrix/particles.js', '/ai-code-matrix/cat.js', '/ai-code-matrix/cat.svg', '/ai-code-matrix/styles.css']);
 const plannerFiles = new Set(['/tool.html', '/tool.js', '/tool.css']);
 const tochkiFiles = new Set([
@@ -157,30 +167,51 @@ function sendAiCode(req, res, type, body, extra = {}) {
   return send(res, 200, type, bytes, headers);
 }
 
-export function createHandler(database) {
+function aiCodeCountry(req) {
+  const peer = req.socket.remoteAddress;
+  const family = isIP(peer);
+  if (!family) return;
+  // Timeweb's Caddy proxy supplies the client IP as the rightmost entry.
+  const forwarded = req.headers['x-forwarded-for']?.split(',').at(-1).trim();
+  const useForwarded = isIP(forwarded) && aiCodeProxyNetwork.check(peer, `ipv${family}`);
+  return geoip.lookup(useForwarded ? forwarded : peer)?.country;
+}
+
+export function createHandler(database, { aiCodeGeo = process.env.AI_CODE_GEO === '1' } = {}) {
   return (req, res) => {
-    void handle(req, res, database).catch(() => {
+    void handle(req, res, database, aiCodeGeo).catch(() => {
       if (!res.headersSent) send(res, 503, 'text/plain', 'Service unavailable');
       else res.destroy();
     });
   };
 }
 
-async function handle(req, res, database) {
+async function handle(req, res, database, aiCodeGeo) {
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, 'text/plain', 'Method not allowed');
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname === '/healthz') {
     return send(res, 200, 'text/plain', 'OK');
   }
-  if (url.pathname === '/ai-code/' || url.pathname === '/ai-code/index.html') return send(res, 308, 'text/plain', 'Moved', { Location: '/ai-code' });
+  if (aiCodeRussianPaths.has(url.pathname)) {
+    if (aiCodeGeo && aiCodeCountry(req) !== 'RU') return send(res, 302, 'text/plain', 'Found', { Location: aiCodeEnglish + url.search });
+    if (url.pathname !== '/ai-code') return send(res, 308, 'text/plain', 'Moved', { Location: '/ai-code' + url.search });
+  }
+  if (url.pathname === aiCodeEnglish + '/' || url.pathname === '/ai-code/en.html') return send(res, 308, 'text/plain', 'Moved', { Location: aiCodeEnglish + url.search });
   if (url.pathname === '/ai-code-matrix/' || url.pathname === '/ai-code-matrix/index.html') return send(res, 308, 'text/plain', 'Moved', { Location: '/ai-code-matrix' });
-  if (aiCodeFiles.has(url.pathname) || matrixFiles.has(url.pathname)) {
+  if (url.pathname === aiCodeEnglish || aiCodeFiles.has(url.pathname) || matrixFiles.has(url.pathname)) {
+    const isEnglish = url.pathname === aiCodeEnglish;
     const isMatrix = url.pathname === '/ai-code-matrix';
-    const path = url.pathname === '/ai-code' || isMatrix ? '/ai-code/index.html' : url.pathname;
+    const isLanding = url.pathname === '/ai-code' || isMatrix || isEnglish;
+    const path = isLanding ? (isEnglish ? '/ai-code/en.html' : '/ai-code/index.html') : url.pathname;
     try {
-      if (url.pathname === '/ai-code' || isMatrix) {
+      if (isLanding) {
         const counter = /^\d{1,12}$/.test(process.env.AI_CODE_METRIKA_ID || '') ? process.env.AI_CODE_METRIKA_ID : '';
-        let html = readFileSync(resolve(root, '.' + path), 'utf8').replace('{{AI_CODE_METRIKA_ID}}', counter).replace('{{AI_CODE_CASES}}', renderCases()).replace('{{AI_CODE_FOUNDERS}}', () => readFileSync(join(root, 'ai-code/founders.html'), 'utf8'));
+        const locale = isEnglish ? 'en' : 'ru';
+        const founders = isEnglish ? 'ai-code/founders-en.html' : 'ai-code/founders.html';
+        let html = readFileSync(resolve(root, '.' + path), 'utf8')
+          .replace('{{AI_CODE_METRIKA_ID}}', counter)
+          .replace('{{AI_CODE_CASES}}', () => renderCases(locale))
+          .replace('{{AI_CODE_FOUNDERS}}', () => readFileSync(join(root, founders), 'utf8'));
         if (isMatrix) html = html
           .replaceAll('https://talyutin.ru/ai-code"', 'https://talyutin.ru/ai-code-matrix"')
           .replace('src="/ai-code/cat-static.svg" width="640" height="590"', 'src="/ai-code-matrix/cat.svg" width="480" height="410"')
@@ -191,6 +222,7 @@ async function handle(req, res, database) {
           .replace('<body>', '<body><div class="matrix-theme-bar" hidden><button type="button" id="matrix-theme-toggle" aria-pressed="false"><span class="matrix-theme-icon" aria-hidden="true">☾</span><span>Тёмная тема</span><span class="matrix-theme-track" aria-hidden="true"></span></button></div>')
           .replace('</body>', '<div class="matrix-controls" aria-label="Режим просмотра"><a href="/ai-code">Обычная версия ↗</a><button type="button" id="matrix-control" hidden>Пропустить сборку</button></div>\n</body>');
         return sendAiCode(req, res, 'text/html', html, {
+          'Content-Language': locale,
           ...(counter ? { 'Content-Security-Policy': portfolioCsp } : {}),
           ...(process.env.ALLOW_INDEXING === '1' ? {} : { 'X-Robots-Tag': 'noindex, nofollow' })
         });

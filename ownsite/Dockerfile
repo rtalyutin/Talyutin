@@ -4,6 +4,6 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY server.mjs db.mjs pg-db.mjs remote-db.mjs seed-works.mjs ai-code-cases.mjs ./
 COPY public ./public
-ENV NODE_ENV=production PORT=4173 REQUIRE_PORTFOLIO_API_URL=1
+ENV NODE_ENV=production PORT=4173 REQUIRE_PORTFOLIO_API_URL=1 AI_CODE_GEO=1
 EXPOSE 4173
 CMD ["node", "server.mjs"]
