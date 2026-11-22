@@ -103,6 +103,45 @@ test("AI-code serves all assets under existing CSP without the portfolio backend
   }
   assert.equal(calls, 0);
 });
+
+test("AI-code routes by client country and always serves the English URL directly", async (t) => {
+  const server = createServer(createHandler({}, { aiCodeGeo: true }));
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  for (const ip of ["77.88.8.8", "2a02:6b8::feed:0ff", "8.8.8.8, 77.88.8.8"]) {
+    const response = await fetch(base + "/ai-code", { headers: { "X-Forwarded-For": ip }, redirect: "manual" });
+    assert.equal(response.status, 200, ip);
+    assert.equal(response.headers.get("content-language"), "ru");
+  }
+
+  for (const ip of ["8.8.8.8", "2001:4860:4860::8888", "77.88.8.8, 8.8.8.8", "invalid", undefined]) {
+    const response = await fetch(base + "/ai-code/?utm_source=example", {
+      headers: { "Accept-Language": "ru", ...(ip ? { "X-Forwarded-For": ip } : {}) }, redirect: "manual",
+    });
+    assert.equal(response.status, 302, ip);
+    assert.equal(response.headers.get("location"), "/ai-code/en?utm_source=example");
+    assert.equal(response.headers.get("cache-control"), "no-store");
+  }
+
+  const response = await fetch(base + "/ai-code/en", { headers: { "X-Forwarded-For": "77.88.8.8" }, redirect: "manual" });
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("content-language"), "en");
+  const html = await response.text();
+  assert.match(html, /<html lang="en"/);
+  assert.match(html, /rel="canonical" href="https:\/\/talyutin\.ru\/ai-code\/en"/);
+  assert.match(html, /data-open-label="See how we fixed it"/);
+  assert.match(html, /YARKIBERSEASON · ESPORTS PLATFORM/);
+  assert.match(html, /Ilya Eremin/);
+  assert.match(decodeURIComponent(html), /Hello! I have a working product built with AI/);
+  assert.doesNotMatch(html, /{{AI_CODE_|>Свернуть|Навайбкодил/);
+  const preview = await fetch(base + "/ai-code/social-preview-en.png");
+  assert.equal(preview.status, 200);
+  assert.equal(preview.headers.get("content-type"), "image/png; charset=utf-8");
+  assert.match(html, /content="https:\/\/talyutin\.ru\/ai-code\/social-preview-en\.png"/);
+  assert.equal((await fetch(base + "/ai-code-matrix", { redirect: "manual" })).status, 200);
+});
+
 test("hero and subsequent assemblies transition at configured boundaries", () => {
   for (const hero of [true, false]) {
     const rain = hero ? motion.heroRain : motion.rain,

@@ -13,7 +13,7 @@ export function enhanceCases(reduced) {
     const body = panel(card);
     const button = toggle(card);
     button.setAttribute('aria-expanded', String(open));
-    button.textContent = open ? 'Свернуть −' : 'Как решили +';
+    button.textContent = open ? `${button.dataset.closeLabel} −` : `${button.dataset.openLabel} +`;
     card.dataset.open = String(open);
     // Hide synchronously: closing content immediately leaves the tab order.
     body.hidden = !open;
